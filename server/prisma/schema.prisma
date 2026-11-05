@@ -1,0 +1,153 @@
+// Wakis Mart database schema.
+// SQLite is used for local development. To use PostgreSQL, change `provider`
+// to "postgresql" and point DATABASE_URL at your Postgres instance.
+// Enum-like fields are stored as strings (validated in the app) so the schema
+// works unchanged on both SQLite and PostgreSQL.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           Int      @id @default(autoincrement())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         String   @default("CUSTOMER") // CUSTOMER | ADMIN
+  phone        String?
+  addressLine1 String?
+  addressLine2 String?
+  city         String?
+  state        String?
+  postalCode   String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  orders       Order[]
+}
+
+model Category {
+  id          Int       @id @default(autoincrement())
+  name        String    @unique
+  slug        String    @unique
+  description String?
+  image       String?
+  sortOrder   Int       @default(0)
+  createdAt   DateTime  @default(now())
+  products    Product[]
+}
+
+model Product {
+  id          Int             @id @default(autoincrement())
+  name        String
+  slug        String          @unique
+  description String
+  image       String
+  price       Int // cents; for deli items this is the lowest portion price
+  compareAtPrice Int? // cents; original price when the item is on special ("Weekly Specials")
+  unit        String? // e.g. "5 lb bag", "12 oz bottle"
+  categoryId  Int
+  category    Category        @relation(fields: [categoryId], references: [id])
+  subcategory String?
+  brand       String
+  sku         String          @unique
+  origin      String          @default("BOTH") // AFRICAN | CARIBBEAN | BOTH
+  inventory   Int             @default(0)
+  isActive    Boolean         @default(true) // false = hidden / unavailable (e.g. deli item not cooked today)
+  featured    Boolean         @default(false)
+  isDeli      Boolean         @default(false)
+  popularity  Int             @default(0) // units sold; drives "best sellers"
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  portions    PortionOption[]
+  orderItems  OrderItem[]
+
+  @@index([categoryId])
+  @@index([isDeli])
+}
+
+model PortionOption {
+  id        Int     @id @default(autoincrement())
+  productId Int
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  label     String // e.g. "Small (16 oz)"
+  price     Int // cents
+  sortOrder Int     @default(0)
+}
+
+model Order {
+  id                    Int         @id @default(autoincrement())
+  orderNumber           String      @unique
+  userId                Int?
+  user                  User?       @relation(fields: [userId], references: [id])
+  customerName          String
+  customerEmail         String
+  customerPhone         String?
+  fulfillmentMethod     String // DELIVERY | PICKUP
+  shippingLine1         String?
+  shippingLine2         String?
+  shippingCity          String?
+  shippingState         String?
+  shippingPostalCode    String?
+  notes                 String?
+  subtotal              Int // cents
+  tax                   Int
+  deliveryFee           Int
+  total                 Int
+  currency              String      @default("usd")
+  paymentStatus         String      @default("UNPAID") // UNPAID | PAID | FAILED | REFUNDED
+  status                String      @default("PENDING") // PENDING | PAID | PROCESSING | READY_FOR_PICKUP | OUT_FOR_DELIVERY | COMPLETED | CANCELLED
+  stripeSessionId       String?     @unique
+  stripePaymentIntentId String?
+  billingName           String?
+  billingAddress        String? // JSON string captured from Stripe
+  inventoryShortfall    Boolean     @default(false) // set if stock ran out between checkout and payment
+  paidAt                DateTime?
+  createdAt             DateTime    @default(now())
+  updatedAt             DateTime    @updatedAt
+  items                 OrderItem[]
+
+  @@index([userId])
+  @@index([customerEmail])
+}
+
+model OrderItem {
+  id           Int     @id @default(autoincrement())
+  orderId      Int
+  order        Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId    Int?
+  product      Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+  productName  String
+  portionLabel String?
+  image        String?
+  sku          String?
+  unitPrice    Int
+  quantity     Int
+  lineTotal    Int
+}
+
+// Stripe event IDs we have already handled — guarantees webhook idempotency.
+model ProcessedStripeEvent {
+  id          String   @id
+  type        String
+  processedAt DateTime @default(now())
+}
+
+model NewsletterSubscriber {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  createdAt DateTime @default(now())
+}
+
+model ContactMessage {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String
+  subject   String
+  message   String
+  createdAt DateTime @default(now())
+}

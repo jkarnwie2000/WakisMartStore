@@ -1,0 +1,11 @@
+node_modules/
+dist/
+.env
+*.log
+server/prisma/*.db
+server/prisma/*.db-journal
+server/uploads/*
+!server/uploads/.gitkeep
+.DS_Store
+.vscode/
+coverage/
