@@ -27,7 +27,11 @@ export const env = {
   isProduction,
   isTest: process.env.NODE_ENV === 'test',
   port: num(process.env.SERVER_PORT || process.env.PORT, 4000),
-  clientUrl: (process.env.CLIENT_URL || 'http://localhost:5173').replace(/\/$/, ''),
+  // On Vercel, fall back to the project's production domain when CLIENT_URL isn't set.
+  clientUrl: (
+    process.env.CLIENT_URL ||
+    (process.env.VERCEL_PROJECT_PRODUCTION_URL ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` : 'http://localhost:5173')
+  ).replace(/\/$/, ''),
   jwtSecret: jwtSecret || 'dev-only-insecure-secret-change-me',
   stripe: {
     secretKey: process.env.STRIPE_SECRET_KEY || '',

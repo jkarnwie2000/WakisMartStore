@@ -1,0 +1,13 @@
+.env
+.env.*
+!.env.example
+node_modules
+**/node_modules
+client/dist
+server/prisma/*.db
+server/prisma/*.db-journal
+server/uploads
+server/tests
+docs
+.vscode
+*.log

@@ -5,6 +5,7 @@ import { slugify } from '../utils/slugify.js';
 import { badRequest, notFound, conflict } from '../utils/httpError.js';
 import { ORDER_STATUSES, ORIGINS, LOW_STOCK_THRESHOLD } from '../utils/constants.js';
 import { listProducts } from './productController.js';
+import { storeImage } from '../middleware/upload.js';
 
 const money = z.coerce.number().min(0).max(100000).transform((d) => Math.round(d * 100)); // dollars → cents
 
@@ -183,9 +184,9 @@ export async function deleteProduct(req, res) {
   res.json({ ok: true });
 }
 
-export function uploadImage(req, res) {
+export async function uploadImage(req, res) {
   if (!req.file) throw badRequest('Please choose an image to upload.');
-  res.status(201).json({ url: `/uploads/${req.file.filename}` });
+  res.status(201).json({ url: await storeImage(req.file) });
 }
 
 // ── Categories ──────────────────────────────────────────────
@@ -241,7 +242,7 @@ export async function listOrders(req, res) {
     ...(q.status && { status: q.status }),
     ...(q.paymentStatus && { paymentStatus: q.paymentStatus }),
     ...(q.search && {
-      OR: [{ orderNumber: { contains: q.search } }, { customerName: { contains: q.search } }, { customerEmail: { contains: q.search } }],
+      OR: [{ orderNumber: { contains: q.search, mode: 'insensitive' } }, { customerName: { contains: q.search, mode: 'insensitive' } }, { customerEmail: { contains: q.search, mode: 'insensitive' } }],
     }),
   };
   const [total, orders] = await Promise.all([

@@ -1,16 +1,18 @@
-// Wakis Mart database schema.
-// SQLite is used for local development. To use PostgreSQL, change `provider`
-// to "postgresql" and point DATABASE_URL at your Postgres instance.
-// Enum-like fields are stored as strings (validated in the app) so the schema
-// works unchanged on both SQLite and PostgreSQL.
+// Wakis Mart database schema (PostgreSQL — e.g. Neon via the Vercel Marketplace).
+// DATABASE_URL is the pooled connection used by the app at runtime;
+// DATABASE_URL_UNPOOLED is the direct connection Prisma CLI uses for `db push`.
+// Enum-like fields are stored as validated strings (see server/utils/constants.js).
 
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  // "rhel-openssl-3.0.x" is the Vercel serverless runtime (Amazon Linux 2023)
+  binaryTargets = ["native", "rhel-openssl-3.0.x"]
 }
 
 datasource db {
-  provider = "sqlite"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DATABASE_URL_UNPOOLED")
 }
 
 model User {
@@ -45,7 +47,7 @@ model Product {
   id          Int             @id @default(autoincrement())
   name        String
   slug        String          @unique
-  description String
+  description String   @db.Text
   image       String
   price       Int // cents; for deli items this is the lowest portion price
   compareAtPrice Int? // cents; original price when the item is on special ("Weekly Specials")

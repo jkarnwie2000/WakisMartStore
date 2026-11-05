@@ -74,12 +74,12 @@ function buildWhere(q, { admin }) {
     for (const term of q.search.split(/\s+/).filter(Boolean).slice(0, 6)) {
       and.push({
         OR: [
-          { name: { contains: term } },
-          { brand: { contains: term } },
-          { subcategory: { contains: term } },
-          { sku: { contains: term } },
-          { category: { name: { contains: term } } },
-          { description: { contains: term } },
+          { name: { contains: term, mode: 'insensitive' } },
+          { brand: { contains: term, mode: 'insensitive' } },
+          { subcategory: { contains: term, mode: 'insensitive' } },
+          { sku: { contains: term, mode: 'insensitive' } },
+          { category: { name: { contains: term, mode: 'insensitive' } } },
+          { description: { contains: term, mode: 'insensitive' } },
         ],
       });
     }

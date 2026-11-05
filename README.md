@@ -21,6 +21,7 @@ Everything is written in JavaScript (no TypeScript): React + Vite on the front e
 - [Testing Stripe payments](#testing-stripe-payments)
 - [Running the app](#running-the-app)
 - [Automated tests & linting](#automated-tests--linting)
+- [Deploying to Vercel](#deploying-to-vercel)
 - [Going live](#going-live)
 - [API reference](#api-reference)
 - [Known limitations](#known-limitations)
@@ -69,7 +70,8 @@ Everything is written in JavaScript (no TypeScript): React + Vite on the front e
 |---|---|
 | Front end | React 19, Vite 6, React Router 7, Context API (cart, auth, store config, toasts), Fetch API, hand-written CSS (custom properties, no UI framework) |
 | Back end | Node.js 20+, Express 5, REST API, Zod validation, Helmet, express-rate-limit, Multer (uploads), cookie-parser |
-| Database | Prisma ORM 6 with SQLite for local development (PostgreSQL-ready) |
+| Database | PostgreSQL (Neon) via Prisma ORM 6 |
+| Hosting | Vercel: static React build + Express as a serverless function, Vercel Blob for uploaded images |
 | Payments | Stripe Node SDK, Stripe Checkout Sessions, Stripe webhooks |
 | Auth | bcryptjs password hashing, JSON Web Tokens in httpOnly cookies, role-based authorization |
 | Tooling | npm workspaces, ESLint 9 (flat config), dotenv, `node:test`, concurrently |
@@ -138,16 +140,17 @@ wakis-mart-store/
 
 ## Getting started
 
-**Prerequisites:** Node.js **20.19+** (or 22+), npm 10+, and a free [Stripe account](https://dashboard.stripe.com/register) for payments. Git is optional.
+**Prerequisites:** Node.js **20.19+** (or 22+), npm 10+, a PostgreSQL database (a free [Neon](https://neon.tech) database works, and is what the Vercel deployment uses), and a free [Stripe account](https://dashboard.stripe.com/register) for payments.
 
 ```bash
 # 1. Clone and enter the project
-git clone <your-repo-url> wakis-mart-store
+git clone https://github.com/jkarnwie2000/wakis-mart-store.git
 cd wakis-mart-store
 
 # 2. Create your environment file
 cp .env.example .env        # Windows PowerShell: Copy-Item .env.example .env
-#    Then edit .env: set JWT_SECRET, ADMIN_EMAIL / ADMIN_PASSWORD, and your Stripe test keys
+#    Then edit .env: set DATABASE_URL / DATABASE_URL_UNPOOLED (your Postgres connection strings),
+#    JWT_SECRET, ADMIN_EMAIL / ADMIN_PASSWORD, and your Stripe test keys
 
 # 3. Install dependencies, create the database and seed the catalog
 npm run setup               # = npm install + prisma db push + seed
@@ -167,7 +170,9 @@ All variables live in **one `.env` file at the project root**. The server reads 
 | `STRIPE_SECRET_KEY` | for payments | `sk_test_…` in development, `sk_live_…` in production. **Server only.** |
 | `STRIPE_PUBLISHABLE_KEY` | optional | `pk_test_…` / `pk_live_…`. Not needed for hosted Checkout, but exposed for future client-side Stripe use. |
 | `STRIPE_WEBHOOK_SECRET` | for payments | `whsec_…` from the Stripe CLI or your dashboard webhook endpoint. **Server only.** |
-| `DATABASE_URL` | yes | `file:./dev.db` (SQLite, relative to `server/prisma/`) or a PostgreSQL URL |
+| `DATABASE_URL` | yes | PostgreSQL connection string used by the app (Neon: the **pooled** URL) |
+| `DATABASE_URL_UNPOOLED` | yes | Direct (non-pooled) connection string used by Prisma CLI for `db push`. Use the same URL as above if your host has no pooler. |
+| `BLOB_READ_WRITE_TOKEN` | on Vercel | Vercel Blob token for admin image uploads. Leave blank locally to save uploads to `server/uploads/`. |
 | `CLIENT_URL` | yes | Public URL of the storefront, used for Stripe success / cancel redirects (`http://localhost:5173` in dev) |
 | `SERVER_PORT` | no | API port (default `4000`) |
 | `JWT_SECRET` | yes | Long random string used to sign session cookies (32+ characters required in production) |
@@ -189,7 +194,7 @@ npm run images --workspace server        # regenerate placeholder product images
 ```
 
 - The seed is **idempotent**. Products are matched by slug, so re-running it never overwrites prices or stock you changed in the admin dashboard.
-- **Switching to PostgreSQL:** set `provider = "postgresql"` in `server/prisma/schema.prisma`, point `DATABASE_URL` at your database (e.g. `postgresql://user:pass@localhost:5432/wakis_mart`), then run `npm run db:setup`. Status fields are stored as validated strings, so no other schema changes are needed.
+- The schema targets **PostgreSQL**. Any Postgres works locally (e.g. `postgresql://user:pass@localhost:5432/wakis_mart`, or a Neon branch). Status fields are stored as validated strings.
 - **Prices in the seed are sample prices.** Review `server/prisma/data/catalog.js` (or use the admin dashboard) before going live.
 
 ## Stripe configuration
@@ -252,7 +257,7 @@ npm test      # 26 API tests (node:test)
 npm run lint  # ESLint for client and server
 ```
 
-The test runner creates a **fresh throwaway SQLite database in your OS temp folder** for each run, seeds it, runs the suite and deletes the file. Your development database is never touched. The tests cover:
+The test runner creates a **uniquely named temporary Postgres schema** (e.g. `wm_test_1234_…`) in the database from `DATABASE_URL`, seeds it, runs the suite and then drops only that schema. Your real tables in the `public` schema are never touched. The tests cover:
 
 - Catalog size and uniqueness, categories, deli portions, search ranking, every filter and sort, pagination, product detail and the home endpoint
 - Server-side cart re-pricing, inventory clamping, portion validation, and tax and delivery calculation
@@ -262,13 +267,31 @@ The test runner creates a **fresh throwaway SQLite database in your OS temp fold
 
 Webhook tests use Stripe's own `generateTestHeaderString` to sign events locally, so they need no network or Stripe account. Creating a real Checkout Session needs your Stripe test key; verify that step manually as described [above](#testing-stripe-payments).
 
+## Deploying to Vercel
+
+The repo is set up for Vercel ([`vercel.json`](vercel.json)): the React app is built to static files, and every `/api/*` request is handled by the Express app running as one serverless function ([`api/index.js`](api/index.js)). Pushing to `main` deploys to production automatically once the Vercel GitHub app is connected.
+
+One-time setup:
+
+1. **Project:** `vercel link` (or import the GitHub repo in the Vercel dashboard).
+2. **Database:** `vercel integration add neon`, then connect it to the project for all environments. This adds `DATABASE_URL` and `DATABASE_URL_UNPOOLED`.
+3. **Image storage:** `vercel blob create-store wakis-mart-images --access public --yes`. This adds `BLOB_READ_WRITE_TOKEN`.
+4. **Environment variables** (Project → Settings → Environment Variables): `JWT_SECRET`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `NODEJS_HELPERS=0` (keeps the raw request body intact for Stripe signature checks), plus any store settings (`TAX_RATE`, delivery, pickup, `STORE_*`). `CLIENT_URL` is optional; it defaults to the project's production domain.
+5. **Create tables and load the catalog** (run locally against the Neon database):
+   ```bash
+   vercel env pull .env.vercel          # downloads the Neon connection strings
+   # copy DATABASE_URL and DATABASE_URL_UNPOOLED into .env, then:
+   npm run db:setup
+   ```
+6. **Stripe webhook:** in Stripe → Developers → Webhooks, add `https://<your-domain>/api/webhooks/stripe` with the four `checkout.session.*` events, and set its signing secret as `STRIPE_WEBHOOK_SECRET` on Vercel. Redeploy after changing environment variables.
+
 ## Going live
 
 1. In Stripe, activate your account and switch the dashboard to **Live mode**.
 2. Replace `STRIPE_SECRET_KEY` / `STRIPE_PUBLISHABLE_KEY` with the `sk_live_` / `pk_live_` keys.
 3. In **Developers → Webhooks**, add an endpoint at `https://<your-domain>/api/webhooks/stripe` for the four `checkout.session.*` events listed above. Put its signing secret in `STRIPE_WEBHOOK_SECRET`.
-4. Set `NODE_ENV=production`, a strong `JWT_SECRET`, `CLIENT_URL=https://<your-domain>`, your real `TAX_RATE`, and your delivery, pickup and store details.
-5. Use PostgreSQL (see above), run `npm run build`, then `npm start` behind HTTPS. In production, cookies are sent with `Secure`.
+4. Set a strong `JWT_SECRET`, `CLIENT_URL=https://<your-domain>`, your real `TAX_RATE`, and your delivery, pickup and store details.
+5. Deploy (see [Deploying to Vercel](#deploying-to-vercel)) or run `npm run build` then `npm start` behind HTTPS on any Node host. In production, cookies are sent with `Secure`.
 6. Change the admin password, and replace the placeholder product images and sample testimonials.
 
 No code changes are needed to switch from test to live; it is configuration only.
