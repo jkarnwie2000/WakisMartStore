@@ -20,7 +20,7 @@ const CATEGORY_THEME = {
   'meat-seafood': ['#FBEDE8', '#F1CFC4', '#A8322B'],
   'frozen-foods': ['#EAF4F8', '#C9E2EC', '#2D6A82'],
   'snacks-beverages': ['#FFF6DD', '#F5E0A0', '#B8862B'],
-  deli: ['#5A3420', '#3B2215', '#E9A23B'],
+  deli: ['#FDEFE0', '#F6D6B4', '#C2570F'],
 };
 const EMOJI_FONT = "'Segoe UI Emoji','Apple Color Emoji','Noto Color Emoji',sans-serif";
 const SERIF = "Georgia,'Times New Roman',serif";
@@ -141,7 +141,7 @@ ${shadow(150)}
 <text x="300" y="370" text-anchor="middle" font-family="${EMOJI_FONT}" font-size="230">${p.emoji}</text>
 <rect x="130" y="462" width="340" height="62" rx="31" fill="${c}"/>
 <text x="300" y="502" text-anchor="middle" font-family="${SERIF}" font-size="24" font-weight="700" fill="#FFF9EE">${esc(wrap(p.name, 24, 1)[0])}</text>`,
-  plate: (c, p) => `<ellipse cx="300" cy="318" rx="232" ry="226" fill="#000" opacity=".25"/>
+  plate: (c, p) => `<ellipse cx="300" cy="318" rx="232" ry="226" fill="#7E4E24" opacity=".18"/>
 <circle cx="300" cy="300" r="225" fill="#FBF7EF"/><circle cx="300" cy="300" r="180" fill="none" stroke="#E7DCC6" stroke-width="4"/>
 <circle cx="300" cy="300" r="170" fill="#F6EEDD"/>
 <text x="300" y="378" text-anchor="middle" font-family="${EMOJI_FONT}" font-size="200">${p.emoji}</text>

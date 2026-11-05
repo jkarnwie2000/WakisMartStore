@@ -12,7 +12,7 @@ export default function Footer() {
       <div className="kente-strip" aria-hidden="true" />
       <div className="container footer-grid">
         <div className="footer-brand">
-          <Logo light />
+          <Logo />
           <p>
             Your African-Caribbean specialty deli and grocery — authentic pantry staples, fresh produce, quality meats and home-style cooking,
             all under one roof.

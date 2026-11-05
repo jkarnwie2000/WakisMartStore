@@ -28,7 +28,7 @@ export default function AdminLayout() {
         Skip to content
       </a>
       <aside className="admin-sidebar">
-        <Logo compact light to="/admin" />
+        <Logo compact to="/admin" />
         <nav aria-label="Admin">
           <ul>
             {NAV.map((n) => (
