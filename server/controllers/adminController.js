@@ -6,6 +6,7 @@ import { badRequest, notFound, conflict } from '../utils/httpError.js';
 import { ORDER_STATUSES, ORIGINS, LOW_STOCK_THRESHOLD } from '../utils/constants.js';
 import { listProducts } from './productController.js';
 import { storeImage } from '../middleware/upload.js';
+import { emailConfigured, sendOrderConfirmation } from '../services/email.js';
 
 const money = z.coerce.number().min(0).max(100000).transform((d) => Math.round(d * 100)); // dollars → cents
 
@@ -274,6 +275,18 @@ export async function updateOrderStatus(req, res) {
   if (status === 'OUT_FOR_DELIVERY' && order.fulfillmentMethod !== 'DELIVERY') throw badRequest('This is a pickup order.');
   const updated = await prisma.order.update({ where: { id }, data: { status }, include: { items: true } });
   res.json({ order: serializeOrder(updated, { admin: true }) });
+}
+
+export async function resendConfirmation(req, res) {
+  const id = idParam(req);
+  if (!emailConfigured()) throw badRequest('Email is not configured. Add RESEND_API_KEY to the server environment.');
+  const order = await prisma.order.findUnique({ where: { id }, include: { items: true } });
+  if (!order) throw notFound('Order not found.');
+  if (order.paymentStatus !== 'PAID') throw badRequest('Confirmation emails are only sent for paid orders.');
+  const result = await sendOrderConfirmation(order, { idempotencyKey: `order-confirmation-${order.orderNumber}-resend-${Date.now()}` });
+  if (!result.sent) throw badRequest(`The email could not be sent: ${result.error}`);
+  const updated = await prisma.order.update({ where: { id }, data: { confirmationEmailSentAt: new Date() }, include: { items: true } });
+  res.json({ order: serializeOrder(updated, { admin: true }), message: `Confirmation emailed to ${order.customerEmail}.` });
 }
 
 export async function listMessages(_req, res) {

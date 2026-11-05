@@ -9,6 +9,7 @@ const DEFAULTS = {
   pickup: { enabled: true, instructions: '' },
   store: { address: '', phone: '', email: '', hours: '' },
   payments: { stripeConfigured: false, publishableKey: null },
+  email: { confirmations: false },
   loaded: false,
 };
 

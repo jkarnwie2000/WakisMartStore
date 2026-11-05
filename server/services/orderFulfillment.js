@@ -2,6 +2,7 @@
 // Every function here is idempotent: it is safe to call repeatedly for the same session
 // (Stripe retries webhooks, and the confirmation page may also trigger a check).
 import { prisma } from '../utils/prisma.js';
+import { sendOrderConfirmation } from './email.js';
 
 function billingFromSession(session) {
   const details = session.customer_details;
@@ -16,7 +17,7 @@ function billingFromSession(session) {
 export async function markOrderPaid(session) {
   if (session.payment_status !== 'paid') return { updated: false, order: null };
 
-  return prisma.$transaction(async (tx) => {
+  const result = await prisma.$transaction(async (tx) => {
     const paymentIntentId = typeof session.payment_intent === 'string' ? session.payment_intent : session.payment_intent?.id;
     // Conditional update = the idempotency guard. Only one caller can flip UNPAID → PAID.
     const flipped = await tx.order.updateMany({
@@ -63,6 +64,16 @@ export async function markOrderPaid(session) {
     }
     return { updated: true, order };
   });
+
+  // Email only after the payment is committed, and only by the caller that flipped the order to PAID,
+  // so each order gets exactly one confirmation. Email failures are logged, never thrown.
+  if (result.updated) {
+    const email = await sendOrderConfirmation(result.order);
+    if (email.sent) {
+      await prisma.order.update({ where: { id: result.order.id }, data: { confirmationEmailSentAt: new Date() } }).catch(() => {});
+    }
+  }
+  return result;
 }
 
 export async function markOrderPaymentFailed(session, { expired = false } = {}) {

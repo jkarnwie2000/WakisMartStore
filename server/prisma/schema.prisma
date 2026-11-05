@@ -109,6 +109,7 @@ model Order {
   billingAddress        String? // JSON string captured from Stripe
   inventoryShortfall    Boolean     @default(false) // set if stock ran out between checkout and payment
   paidAt                DateTime?
+  confirmationEmailSentAt DateTime?
   createdAt             DateTime    @default(now())
   updatedAt             DateTime    @updatedAt
   items                 OrderItem[]

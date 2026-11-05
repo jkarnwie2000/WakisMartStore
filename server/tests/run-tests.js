@@ -31,6 +31,8 @@ const env = {
   STRIPE_SECRET_KEY: '',
   STRIPE_WEBHOOK_SECRET: 'whsec_test_wakis_mart_secret',
   BLOB_READ_WRITE_TOKEN: '',
+  RESEND_API_KEY: '',
+  EMAIL_FROM: '',
   JWT_SECRET: 'test-secret-test-secret-test-secret-123',
   ADMIN_EMAIL: 'admin@test.local',
   ADMIN_PASSWORD: 'AdminPass123',

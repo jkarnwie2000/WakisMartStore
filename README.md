@@ -45,6 +45,7 @@ Everything is written in JavaScript (no TypeScript): React + Vite on the front e
 - Billing address and card details are collected on Stripe's hosted page. Any payment method enabled in your Stripe dashboard is offered automatically.
 - **Webhook signature verification**. An order is marked paid only after a verified `checkout.session.completed` or `async_payment_succeeded` event, or a server-side session lookup on the confirmation page.
 - **Exactly-once fulfilment**: a conditional `UNPAID → PAID` update plus a processed-event table prevent double-processing and double inventory decrements. Expired, failed or abandoned sessions cancel the pending order.
+- **Order confirmation emails** (via [Resend](https://resend.com)) are sent once per paid order, after payment is committed. An email failure never affects the payment, and admins can resend from the order page.
 - Inventory is decremented inside a database transaction after payment. If stock ran out between checkout and payment, the order is flagged for staff instead of the inventory going negative.
 
 **Accounts & admin**
@@ -62,7 +63,7 @@ Everything is written in JavaScript (no TypeScript): React + Vite on the front e
 - Responsive from 360 px phones to wide desktops: mobile drawer navigation, slide-in filter panel, and stacked cart and checkout layouts.
 - Accessibility: semantic HTML and landmarks, skip link, labelled form controls with `aria-invalid` / `aria-describedby`, a keyboard-navigable search combobox, visible focus rings, AA-contrast colour tokens, `prefers-reduced-motion` support, and descriptive alt text.
 - Lazy-loaded images, a code-split admin bundle, Helmet security headers with a CSP, rate-limited auth and checkout endpoints, and Zod validation on every input.
-- 26 automated API tests and a clean ESLint run on client and server.
+- 31 automated API tests and a clean ESLint run on client and server.
 
 ## Technology stack
 
@@ -172,6 +173,8 @@ All variables live in **one `.env` file at the project root**. The server reads 
 | `STRIPE_WEBHOOK_SECRET` | for payments | `whsec_…` from the Stripe CLI or your dashboard webhook endpoint. **Server only.** |
 | `DATABASE_URL` | yes | PostgreSQL connection string used by the app (Neon: the **pooled** URL) |
 | `DATABASE_URL_UNPOOLED` | yes | Direct (non-pooled) connection string used by Prisma CLI for `db push`. Use the same URL as above if your host has no pooler. |
+| `RESEND_API_KEY` | for emails | Resend API key. Blank = no confirmation emails. |
+| `EMAIL_FROM` | no | Sender, e.g. `Wakis Mart <orders@yourdomain.com>` (requires a domain verified in Resend). Default `onboarding@resend.dev`, which only delivers to your own Resend account email. |
 | `BLOB_READ_WRITE_TOKEN` | on Vercel | Vercel Blob token for admin image uploads. Leave blank locally to save uploads to `server/uploads/`. |
 | `CLIENT_URL` | yes | Public URL of the storefront, used for Stripe success / cancel redirects (`http://localhost:5173` in dev) |
 | `SERVER_PORT` | no | API port (default `4000`) |
@@ -253,7 +256,7 @@ In development, Vite proxies `/api` and `/uploads` to Express, so the browser ta
 ## Automated tests & linting
 
 ```bash
-npm test      # 26 API tests (node:test)
+npm test      # 31 API tests (node:test)
 npm run lint  # ESLint for client and server
 ```
 
@@ -263,6 +266,7 @@ The test runner creates a **uniquely named temporary Postgres schema** (e.g. `wm
 - Server-side cart re-pricing, inventory clamping, portion validation, and tax and delivery calculation
 - Checkout validation, and the 503 response when Stripe is not configured
 - Webhook signature rejection, **verified payment → order paid + inventory decremented once**, duplicate and replayed events, delayed payment methods, expired sessions, and stock-shortfall flagging
+- Confirmation emails: sent exactly once per paid order, never block payment if Resend fails, HTML-escaped, admin resend
 - Registration and password hashing, login and logout, profile, per-customer order isolation, admin authorization (401/403), product CRUD, deli availability, the order-status workflow, newsletter and contact
 
 Webhook tests use Stripe's own `generateTestHeaderString` to sign events locally, so they need no network or Stripe account. Creating a real Checkout Session needs your Stripe test key; verify that step manually as described [above](#testing-stripe-payments).
@@ -320,7 +324,7 @@ No code changes are needed to switch from test to live; it is configuration only
 
 - **Product images are branded placeholders**, not real photography. Each product has its own SVG illustration in `client/public/images/products/`. Replace a file with a photo using the same name, or upload a photo for that product in **Admin → Products → Edit**.
 - **Seed prices and testimonials are samples** and should be replaced with real data.
-- **Emails:** the app doesn't send its own confirmation emails. Customers see the confirmation page, and Stripe can email receipts (enable *Successful payments* under **Settings → Customer emails** in Stripe; in test mode, receipts are only sent from the dashboard). An email provider (e.g. Resend or SendGrid) could be added in `services/orderFulfillment.js`.
+- **Emails:** order confirmations need a Resend API key. Until you verify a domain in Resend and set `EMAIL_FROM`, Resend only delivers to the address that owns the Resend account, so other customers won't receive emails. Stripe can also send its own receipts in live mode (**Settings → Customer emails**).
 - **Tax** is a single configurable rate, not jurisdiction-aware. Stripe Tax could replace it later.
 - **Inventory** is reserved at payment time, not when the cart is created. Oversells between checkout and payment are flagged on the order for staff follow-up.
 - `npm audit` reports an advisory in `deepmerge-ts`, used only by the Prisma **CLI** (a dev tool, not shipped at runtime). The fix requires Prisma 7, which is a breaking upgrade.

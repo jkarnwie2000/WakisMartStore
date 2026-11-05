@@ -83,6 +83,7 @@ export function serializeOrder(o, { admin = false } = {}) {
     out.billingName = o.billingName;
     out.billingAddress = o.billingAddress ? safeJson(o.billingAddress) : null;
     out.inventoryShortfall = o.inventoryShortfall;
+    out.confirmationEmailSentAt = o.confirmationEmailSentAt ?? null;
   }
   return out;
 }

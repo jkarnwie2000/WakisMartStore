@@ -17,7 +17,7 @@ export default function OrderConfirmationPage() {
   const sessionId = params.get('session_id');
   const { clearCart } = useCart();
   const { user } = useAuth();
-  const { pickup, delivery } = useStoreConfig();
+  const { pickup, delivery, email } = useStoreConfig();
   const [order, setOrder] = useState(null);
   const [error, setError] = useState(null);
   const [polls, setPolls] = useState(0);
@@ -81,7 +81,14 @@ export default function OrderConfirmationPage() {
           <>
             <h1 className="page-title">Thank you, {order.customerName.split(' ')[0]}! Your order is confirmed.</h1>
             <p>
-              We’ve received your payment. A receipt from Stripe is on its way to <strong>{order.customerEmail}</strong>.
+              We’ve received your payment.{' '}
+              {email.confirmations ? (
+                <>
+                  A confirmation email is on its way to <strong>{order.customerEmail}</strong>.
+                </>
+              ) : (
+                <>Please keep your order number for reference.</>
+              )}
             </p>
           </>
         )}

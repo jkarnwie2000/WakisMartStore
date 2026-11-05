@@ -70,5 +70,6 @@ adminRouter.delete('/categories/:id', admin.deleteCategory);
 adminRouter.get('/orders', admin.listOrders);
 adminRouter.get('/orders/:id', admin.getOrder);
 adminRouter.patch('/orders/:id/status', admin.updateOrderStatus);
+adminRouter.post('/orders/:id/resend-confirmation', admin.resendConfirmation);
 adminRouter.get('/messages', admin.listMessages);
 api.use('/admin', adminRouter);

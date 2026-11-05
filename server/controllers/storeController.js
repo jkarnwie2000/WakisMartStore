@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { prisma } from '../utils/prisma.js';
 import { env, stripeConfigured } from '../config/env.js';
+import { emailConfigured } from '../services/email.js';
 
 export function getConfig(_req, res) {
   const { store } = env;
@@ -11,6 +12,7 @@ export function getConfig(_req, res) {
     pickup: store.pickup,
     store: { address: store.address, phone: store.phone, email: store.email, hours: store.hours },
     payments: { stripeConfigured: stripeConfigured(), publishableKey: env.stripe.publishableKey || null },
+    email: { confirmations: emailConfigured() },
   });
 }
 

@@ -84,6 +84,7 @@ export const api = {
     deleteCategory: (id) => request(`/admin/categories/${id}`, { method: 'DELETE' }),
     orders: (params, signal) => request(`/admin/orders${qs(params)}`, { signal }),
     order: (id) => request(`/admin/orders/${id}`),
+    resendConfirmation: (id) => request(`/admin/orders/${id}/resend-confirmation`, { method: 'POST' }),
     updateOrderStatus: (id, status) => request(`/admin/orders/${id}/status`, { method: 'PATCH', body: { status } }),
     messages: () => request('/admin/messages'),
   },

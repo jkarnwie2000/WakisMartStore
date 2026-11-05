@@ -145,6 +145,7 @@ export function AdminOrderDetail() {
   const { notify } = useToast();
   const { data, error, loading, reload, setData } = useAsync(() => api.admin.order(id), [id]);
   const [saving, setSaving] = useState(false);
+  const [resending, setResending] = useState(false);
   useDocumentTitle(data ? `Order ${data.order.orderNumber}` : 'Order');
 
   if (loading) return <Spinner />;
@@ -163,6 +164,19 @@ export function AdminOrderDetail() {
       notify(err.message, { type: 'error' });
     } finally {
       setSaving(false);
+    }
+  };
+
+  const resend = async () => {
+    setResending(true);
+    try {
+      const r = await api.admin.resendConfirmation(order.id);
+      setData({ order: { ...order, ...r.order } });
+      notify(r.message);
+    } catch (err) {
+      notify(err.message, { type: 'error' });
+    } finally {
+      setResending(false);
     }
   };
 
@@ -208,6 +222,15 @@ export function AdminOrderDetail() {
             </p>
           ) : (
             <p className="muted">Available once payment completes.</p>
+          )}
+        </div>
+        <div className="order-block">
+          <h3>Confirmation email</h3>
+          <p>{order.confirmationEmailSentAt ? `Sent ${formatDate(order.confirmationEmailSentAt, true)}` : 'Not sent'}</p>
+          {order.paymentStatus === 'PAID' && (
+            <button type="button" className="btn btn--outline btn--sm" style={{ marginTop: 10 }} onClick={resend} disabled={resending}>
+              <Icon name="mail" size={14} /> {resending ? 'Sending…' : order.confirmationEmailSentAt ? 'Resend email' : 'Send email'}
+            </button>
           )}
         </div>
         <div className="order-block">
