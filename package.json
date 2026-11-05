@@ -2,8 +2,12 @@
   "name": "wakis-mart",
   "version": "1.0.0",
   "private": true,
+  "type": "module",
   "description": "Wakis Mart — African-Caribbean specialty deli & grocery e-commerce application",
-  "workspaces": ["client", "server"],
+  "workspaces": [
+    "client",
+    "server"
+  ],
   "scripts": {
     "setup": "npm install && npm run db:setup",
     "db:setup": "npm run db:push --workspace server && npm run db:seed --workspace server",
