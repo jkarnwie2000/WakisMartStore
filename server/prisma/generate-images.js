@@ -14,7 +14,7 @@ const CATEGORY_DIR = path.join(OUT, 'categories');
 
 const PACK_COLORS = ['#1F5134', '#D9661F', '#A8322B', '#B8862B', '#2D6A82', '#5E3A7A', '#3D7A36', '#7E4E24', '#0F4C5C', '#C2452D', '#2E5E4E', '#8A6D1F'];
 const CATEGORY_THEME = {
-  'african-groceries': ['#FFF4E0', '#F6DDB3', '#1F5134'],
+  'african-groceries': ['#FFF4E0', '#F6DDB3', '#1E2A5A'],
   'caribbean-groceries': ['#FFF1E2', '#F9D2A8', '#D9661F'],
   'fresh-produce': ['#F1F8E8', '#D7EBC3', '#3D7A36'],
   'meat-seafood': ['#FBEDE8', '#F1CFC4', '#A8322B'],

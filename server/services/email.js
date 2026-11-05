@@ -38,7 +38,7 @@ export function renderOrderConfirmation(order) {
   const html = `<!doctype html><html><body style="margin:0;background:#fffcf6;font-family:Arial,Helvetica,sans-serif;color:#241a12">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#fffcf6;padding:24px 12px"><tr><td align="center">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px;background:#ffffff;border:1px solid #eadfc9;border-radius:14px;overflow:hidden">
-    <tr><td style="background:#1f5134;padding:22px 28px;color:#fff6e7;font-family:Georgia,serif;font-size:24px;font-weight:bold">Wakis <span style="color:#ecd08a">Mart</span></td></tr>
+    <tr><td style="background:#1e2a5a;padding:22px 28px;color:#fff6e7;font-family:Georgia,serif;font-size:24px;font-weight:bold">Wakis <span style="color:#ecd08a">Mart</span></td></tr>
     <tr><td style="height:6px;background:#e07a1f"></td></tr>
     <tr><td style="padding:28px">
       <h1 style="font-family:Georgia,serif;font-size:24px;margin:0 0 8px">Thank you, ${esc(firstName)}! Your order is confirmed.</h1>
@@ -57,9 +57,9 @@ export function renderOrderConfirmation(order) {
       </table>
       <div style="margin-top:22px;padding:16px;border:1px solid #eadfc9;border-radius:10px;font-size:14px;line-height:1.5">${fulfilment}</div>
       <p style="margin:24px 0 0"><a href="${esc(orderUrl)}" style="display:inline-block;background:#c2570f;color:#ffffff;text-decoration:none;font-weight:bold;padding:12px 22px;border-radius:999px">View your order</a></p>
-      <p style="margin:22px 0 0;font-size:13px;color:#6b5a48">Questions? ${store.email ? 'Reply to this email or contact us' : 'Contact us'} through <a href="${esc(env.clientUrl)}/contact" style="color:#1f5134">our contact page</a> and include your order number.${store.phone ? ` You can also call us on ${esc(store.phone)}.` : ''}</p>
+      <p style="margin:22px 0 0;font-size:13px;color:#6b5a48">Questions? ${store.email ? 'Reply to this email or contact us' : 'Contact us'} through <a href="${esc(env.clientUrl)}/contact" style="color:#1e2a5a">our contact page</a> and include your order number.${store.phone ? ` You can also call us on ${esc(store.phone)}.` : ''}</p>
     </td></tr>
-    <tr><td style="background:#0d2818;color:#eedcb9;padding:16px 28px;font-size:12px">Wakis Mart · African · Caribbean Deli &amp; Grocery</td></tr>
+    <tr><td style="background:#0b1029;color:#eedcb9;padding:16px 28px;font-size:12px">Wakis Mart · African · Caribbean Deli &amp; Grocery</td></tr>
   </table></td></tr></table></body></html>`;
 
   const text = [
