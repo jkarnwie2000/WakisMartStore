@@ -43,8 +43,7 @@ const env = {
 
 const run = (cmd, args) => spawnSync(cmd, args, { cwd: serverDir, env, stdio: 'inherit', shell: process.platform === 'win32' }).status ?? 1;
 
-const dropSchema = () =>
-  run('node', ['--input-type=module', '-e', `import { PrismaClient } from '@prisma/client'; const p = new PrismaClient(); await p.$executeRawUnsafe('DROP SCHEMA IF EXISTS "${schema}" CASCADE'); await p.$disconnect();`]);
+const dropSchema = () => run('node', ['tests/drop-test-schemas.js', schema]);
 
 let status = run('npx', ['prisma', 'db', 'push', '--skip-generate']);
 if (status === 0) status = run('node', ['prisma/seed.js']);
