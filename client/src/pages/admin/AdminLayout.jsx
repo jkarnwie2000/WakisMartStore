@@ -1,5 +1,5 @@
 import { Suspense } from 'react';
-import { NavLink, Outlet, Link } from 'react-router-dom';
+import { NavLink, Outlet, Link, useNavigate } from 'react-router-dom';
 import Logo from '../../components/Logo.jsx';
 import Icon from '../../components/Icon.jsx';
 import { Spinner } from '../../components/Feedback.jsx';
@@ -14,8 +14,14 @@ const NAV = [
   { to: '/admin/messages', label: 'Messages', icon: 'chat' },
 ];
 
+const ACCOUNT_NAV = [
+  { to: '/account', label: 'My account', icon: 'user', end: true },
+  { to: '/account/profile', label: 'Profile & security', icon: 'lock' },
+];
+
 export default function AdminLayout() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
   return (
     <div className="admin">
       <a href="#admin-main" className="skip-link">
@@ -32,6 +38,30 @@ export default function AdminLayout() {
                 </NavLink>
               </li>
             ))}
+          </ul>
+        </nav>
+        <nav aria-label="Your account" className="admin-sidebar__account">
+          <p className="admin-sidebar__heading">Your account</p>
+          <ul>
+            {ACCOUNT_NAV.map((n) => (
+              <li key={n.to}>
+                <NavLink to={n.to} end={n.end}>
+                  <Icon name={n.icon} size={18} /> <span>{n.label}</span>
+                </NavLink>
+              </li>
+            ))}
+            <li>
+              <button
+                type="button"
+                className="admin-sidebar__signout"
+                onClick={async () => {
+                  await logout();
+                  navigate('/');
+                }}
+              >
+                <Icon name="logout" size={18} /> <span>Sign out</span>
+              </button>
+            </li>
           </ul>
         </nav>
         <div className="admin-sidebar__foot">

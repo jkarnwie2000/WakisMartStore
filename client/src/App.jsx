@@ -44,6 +44,7 @@ export default function App() {
         <Route path="login" element={<LoginPage />} />
         <Route path="register" element={<RegisterPage />} />
         <Route path="account" element={<RequireAuth><AccountPage /></RequireAuth>} />
+        <Route path="account/profile" element={<RequireAuth><AccountPage /></RequireAuth>} />
         <Route path="account/orders/:orderNumber" element={<RequireAuth><AccountOrderPage /></RequireAuth>} />
         <Route path="*" element={<NotFoundPage />} />
       </Route>

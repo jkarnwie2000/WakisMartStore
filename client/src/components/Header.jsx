@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, NavLink, useLocation } from 'react-router-dom';
+import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import Logo from './Logo.jsx';
 import Icon from './Icon.jsx';
 import SearchBar from './SearchBar.jsx';
@@ -20,9 +20,10 @@ export function AnnouncementBar() {
 
 export default function Header() {
   const { count } = useCart();
-  const { user, isAdmin } = useAuth();
+  const { user, isAdmin, logout } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
 
   useEffect(() => {
     setMenuOpen(false);
@@ -51,9 +52,14 @@ export default function Header() {
               <span>Admin</span>
             </Link>
           )}
-          <Link to={user ? '/account' : '/login'} className="header-action">
+          <Link
+            to={user ? '/account' : '/login'}
+            className="header-action"
+            aria-label={user ? `My account (signed in as ${user.name})` : 'Sign in'}
+            title={user ? `Signed in as ${user.name}` : undefined}
+          >
             <Icon name="user" />
-            <span>{user ? user.name.split(' ')[0] : 'Sign in'}</span>
+            <span>{user ? 'My account' : 'Sign in'}</span>
           </Link>
           <Link to="/cart" className="header-action header-cart" aria-label={`Shopping cart, ${count} ${count === 1 ? 'item' : 'items'}`}>
             <Icon name="cart" size={24} />
@@ -106,9 +112,22 @@ export default function Header() {
           ))}
         </ul>
         <ul className="drawer__list drawer__list--secondary">
-          <li>
-            <NavLink to={user ? '/account' : '/login'}>{user ? 'My account & orders' : 'Sign in / Register'}</NavLink>
-          </li>
+          {user ? (
+            <>
+              <li>
+                <NavLink to="/account" end>
+                  My account &amp; orders
+                </NavLink>
+              </li>
+              <li>
+                <NavLink to="/account/profile">Profile &amp; security</NavLink>
+              </li>
+            </>
+          ) : (
+            <li>
+              <NavLink to="/login">Sign in / Register</NavLink>
+            </li>
+          )}
           {isAdmin && (
             <li>
               <NavLink to="/admin">Admin dashboard</NavLink>
@@ -120,6 +139,21 @@ export default function Header() {
           <li>
             <NavLink to="/contact">Contact us</NavLink>
           </li>
+          {user && (
+            <li>
+              <button
+                type="button"
+                className="drawer__signout"
+                onClick={async () => {
+                  setMenuOpen(false);
+                  await logout();
+                  navigate('/');
+                }}
+              >
+                Sign out
+              </button>
+            </li>
+          )}
         </ul>
       </nav>
     </header>

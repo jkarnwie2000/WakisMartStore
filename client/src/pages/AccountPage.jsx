@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { api } from '../services/api.js';
 import { useAuth } from '../context/AuthContext.jsx';
 import { useAsync } from '../hooks/useAsync.js';
@@ -144,11 +144,18 @@ function OrderHistory() {
   );
 }
 
+const ACCOUNT_TABS = [
+  { id: 'orders', label: 'Order history', to: '/account' },
+  { id: 'profile', label: 'Profile & security', to: '/account/profile' },
+];
+
 export default function AccountPage() {
-  useDocumentTitle('My Account');
+  const { pathname } = useLocation();
+  // The tab comes from the URL so /account/profile can be linked and bookmarked directly.
+  const tab = pathname.startsWith('/account/profile') ? 'profile' : 'orders';
+  useDocumentTitle(tab === 'profile' ? 'Profile & Security' : 'My Account');
   const { user, logout, isAdmin } = useAuth();
   const navigate = useNavigate();
-  const [tab, setTab] = useState('orders');
 
   return (
     <div className="page container">
@@ -176,18 +183,15 @@ export default function AccountPage() {
         </div>
       </div>
 
-      <div className="tabs" role="tablist" aria-label="Account sections">
-        {[
-          ['orders', 'Order history'],
-          ['profile', 'Profile & security'],
-        ].map(([id, label]) => (
-          <button key={id} type="button" role="tab" aria-selected={tab === id} className={`tab ${tab === id ? 'is-active' : ''}`} onClick={() => setTab(id)}>
-            {label}
-          </button>
+      <nav className="tabs" aria-label="Account sections">
+        {ACCOUNT_TABS.map((t) => (
+          <Link key={t.id} to={t.to} className={`tab ${tab === t.id ? 'is-active' : ''}`} aria-current={tab === t.id ? 'page' : undefined}>
+            {t.label}
+          </Link>
         ))}
-      </div>
+      </nav>
 
-      <div role="tabpanel" className="account-panel">
+      <div className="account-panel">
         {tab === 'orders' ? (
           <OrderHistory />
         ) : (
