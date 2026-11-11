@@ -91,7 +91,6 @@ Everything is written in JavaScript (no TypeScript): React + Vite on the front e
 |---|---|---|---|
 | ![Mobile home](docs/screenshots/mobile-home.png) | ![Mobile deli](docs/screenshots/mobile-deli.png) | ![Admin](docs/screenshots/admin-dashboard.png) | ![Admin products](docs/screenshots/admin-products.png) |
 
-> The checkout screenshot shows the "payments not configured" notice because it was captured before Stripe keys were added.
 
 ## Project structure
 
