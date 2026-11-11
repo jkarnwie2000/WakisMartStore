@@ -1,6 +1,6 @@
 # Wakis Mart — notes for Claude
 
-African-Caribbean deli & grocery e-commerce app. JavaScript only (no TypeScript). See README.md for setup.
+Wakis Mart Deli & Grocery e-commerce app. JavaScript only (no TypeScript). See README.md for setup.
 
 ## Layout
 - `client/` React 19 + Vite 6 + React Router 7. Global state via Context (`src/context/`). All styles in `src/styles/global.css` (design tokens on `:root`).

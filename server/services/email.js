@@ -59,7 +59,7 @@ export function renderOrderConfirmation(order) {
       <p style="margin:24px 0 0"><a href="${esc(orderUrl)}" style="display:inline-block;background:#c2570f;color:#ffffff;text-decoration:none;font-weight:bold;padding:12px 22px;border-radius:999px">View your order</a></p>
       <p style="margin:22px 0 0;font-size:13px;color:#6b5a48">Questions? ${store.email ? 'Reply to this email or contact us' : 'Contact us'} through <a href="${esc(env.clientUrl)}/contact" style="color:#1e2a5a">our contact page</a> and include your order number.${store.phone ? ` You can also call us on ${esc(store.phone)}.` : ''}</p>
     </td></tr>
-    <tr><td style="background:#0b1029;color:#eedcb9;padding:16px 28px;font-size:12px">Wakis Mart · African · Caribbean Deli &amp; Grocery</td></tr>
+    <tr><td style="background:#0b1029;color:#eedcb9;padding:16px 28px;font-size:12px">Wakis Mart Deli &amp; Grocery</td></tr>
   </table></td></tr></table></body></html>`;
 
   const text = [

@@ -14,7 +14,7 @@ export default function Footer() {
         <div className="footer-brand">
           <Logo light />
           <p>
-            Your African-Caribbean specialty deli and grocery — authentic pantry staples, fresh produce, quality meats and home-style cooking,
+            Your specialty deli and grocery — authentic pantry staples, fresh produce, quality meats and home-style cooking,
             all under one roof.
           </p>
         </div>

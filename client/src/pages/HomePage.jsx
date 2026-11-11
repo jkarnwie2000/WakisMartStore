@@ -25,7 +25,7 @@ function Hero() {
     <section className="hero" aria-labelledby="hero-title">
       <div className="container hero__inner">
         <div className="hero__copy">
-          <p className="eyebrow eyebrow--light">African · Caribbean · Deli &amp; Grocery</p>
+          <p className="eyebrow eyebrow--light">Specialty Deli &amp; Grocery</p>
           <h1 id="hero-title" className="hero__title">
             The taste of home, <em>stocked fresh</em> every week.
           </h1>

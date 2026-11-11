@@ -1,6 +1,6 @@
 # Wakis Mart Deli & Grocery
 
-A full-stack e-commerce application for **Wakis Mart**, an African-Caribbean specialty deli and grocery store. Customers can browse 216 grocery products and a 26-dish deli menu, search and filter the catalog, build a cart, and pay through **Stripe Checkout**. Orders are confirmed by verified Stripe webhooks. Customers get accounts with order history, and staff get a protected admin dashboard for products, inventory, deli availability and orders.
+A full-stack e-commerce application for **Wakis Mart Deli & Grocery**, a specialty deli and grocery store. Customers can browse 216 grocery products and a 26-dish deli menu, search and filter the catalog, build a cart, and pay through **Stripe Checkout**. Orders are confirmed by verified Stripe webhooks. Customers get accounts with order history, and staff get a protected admin dashboard for products, inventory, deli availability and orders.
 
 Everything is written in JavaScript (no TypeScript): React + Vite on the front end, Node.js + Express + Prisma on the back end.
 

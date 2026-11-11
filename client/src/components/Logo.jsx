@@ -23,7 +23,7 @@ export default function Logo({ to = '/', compact = false, light = false }) {
         <span className="logo__name">
           Wakis <span className="logo__accent">Mart</span>
         </span>
-        {!compact && <span className="logo__tag">African · Caribbean Deli &amp; Grocery</span>}
+        {!compact && <span className="logo__tag">Specialty Deli &amp; Grocery</span>}
       </span>
     </Link>
   );
