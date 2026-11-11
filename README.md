@@ -1,4 +1,4 @@
-# Wakis Mart — African-Caribbean Deli & Grocery
+# Wakis Mart Deli & Grocery
 
 A full-stack e-commerce application for **Wakis Mart**, an African-Caribbean specialty deli and grocery store. Customers can browse 216 grocery products and a 26-dish deli menu, search and filter the catalog, build a cart, and pay through **Stripe Checkout**. Orders are confirmed by verified Stripe webhooks. Customers get accounts with order history, and staff get a protected admin dashboard for products, inventory, deli availability and orders.
 

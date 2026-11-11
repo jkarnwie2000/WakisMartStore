@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
-  "description": "Wakis Mart — African-Caribbean specialty deli & grocery e-commerce application",
+  "description": "Wakis Mart Deli & Grocery e-commerce application",
   "workspaces": [
     "client",
     "server"
