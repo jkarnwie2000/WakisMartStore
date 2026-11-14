@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { api } from '../services/api.js';
 import { useAsync } from '../hooks/useAsync.js';
 import { useDocumentTitle } from '../hooks/useDocumentTitle.js';
@@ -22,12 +22,16 @@ export default function ProductPage() {
   const addToCart = useAddToCart();
   const { quantityInCart } = useCart();
   const { delivery, pickup } = useStoreConfig();
+  const navigate = useNavigate();
+  const location = useLocation();
   const [portionId, setPortionId] = useState(null);
   const [qty, setQty] = useState(1);
+  const [justAdded, setJustAdded] = useState(null); // { label, quantity } after a successful add
 
   useEffect(() => {
     setPortionId(product?.portions?.[0]?.id ?? null);
     setQty(1);
+    setJustAdded(null);
   }, [product]);
 
   if (loading) return <Spinner label="Loading product…" />;
@@ -39,9 +43,21 @@ export default function ProductPage() {
   const inCart = quantityInCart(product.id);
   const maxQty = Math.max(0, product.inventory - inCart);
   const catPath = departmentPath(product.category.slug);
+  // Return to the page the shopper came from (listing, search, deli…); if they landed here
+  // directly (no in-app history), go to the product's department instead.
+  const continueShopping = () => (location.key !== 'default' ? navigate(-1) : navigate(catPath));
+  const add = () => {
+    const quantity = Math.min(qty, maxQty);
+    if (addToCart(product, { portion, quantity })) {
+      setJustAdded({ label: portion ? `${product.name} (${portion.label})` : product.name, quantity });
+    }
+  };
 
   return (
     <div className="page container">
+      <button type="button" className="back-link pdp__back" onClick={continueShopping}>
+        <Icon name="arrowLeft" size={16} /> Continue shopping
+      </button>
       <Breadcrumbs
         items={[
           { label: 'Home', to: '/' },
@@ -78,15 +94,36 @@ export default function ProductPage() {
               type="button"
               className="btn btn--accent btn--lg"
               disabled={soldOut || maxQty === 0}
-              onClick={() => addToCart(product, { portion, quantity: Math.min(qty, maxQty) })}
+              onClick={add}
             >
               <Icon name="cart" size={18} /> {soldOut ? (product.isDeli ? 'Sold out today' : 'Out of stock') : maxQty === 0 ? 'All stock in cart' : 'Add to cart'}
             </button>
           </div>
-          {inCart > 0 && (
-            <p className="pdp__incart">
-              <Icon name="check" size={16} /> {inCart} in your cart · <Link to="/cart">View cart</Link>
-            </p>
+          {justAdded ? (
+            <div className="added-panel" role="status">
+              <p className="added-panel__msg">
+                <Icon name="check" size={18} strokeWidth={2.4} /> Added {justAdded.quantity > 1 ? `${justAdded.quantity} × ` : ''}
+                {justAdded.label} to your cart
+                <span className="added-panel__count">{inCart} of this item now in your cart</span>
+              </p>
+              <div className="added-panel__actions">
+                <button type="button" className="btn btn--outline" onClick={continueShopping}>
+                  <Icon name="arrowLeft" size={16} /> Continue shopping
+                </button>
+                <Link to="/cart" className="btn btn--outline">
+                  <Icon name="cart" size={16} /> View cart
+                </Link>
+                <Link to="/checkout" className="btn btn--primary">
+                  <Icon name="lock" size={16} /> Checkout
+                </Link>
+              </div>
+            </div>
+          ) : (
+            inCart > 0 && (
+              <p className="pdp__incart">
+                <Icon name="check" size={16} /> {inCart} in your cart · <Link to="/cart">View cart</Link> · <Link to="/checkout">Checkout</Link>
+              </p>
+            )
           )}
 
           <ul className="pdp__assurances">
