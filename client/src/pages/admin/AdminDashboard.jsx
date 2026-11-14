@@ -50,6 +50,7 @@ function StatusBars({ byStatus }) {
 export default function AdminDashboard() {
   useDocumentTitle('Admin Dashboard');
   const { data, error, loading, reload } = useAsync(() => api.admin.stats(), []);
+  const today = useAsync(() => api.admin.overview(), []);
   if (loading) return <Spinner label="Loading dashboard…" />;
   if (error) return <ErrorState error={error} onRetry={reload} />;
 
@@ -62,12 +63,25 @@ export default function AdminDashboard() {
         </Link>
       </div>
 
+      {today.data && (
+        <section className="today" aria-label="Today at a glance">
+          <h2 className="today__title">Today</h2>
+          <div className="today__grid">
+            <StatTile label="Revenue today" value={formatPrice(today.data.today.revenue)} sub={`${today.data.today.orders} paid order${today.data.today.orders === 1 ? '' : 's'}`} to="/admin/reports" />
+            <StatTile label="To pack" value={today.data.fulfilment.toPack} sub="Paid orders waiting" to="/admin/fulfilment" />
+            <StatTile label="Ready / out for delivery" value={`${today.data.fulfilment.readyForPickup} / ${today.data.fulfilment.outForDelivery}`} sub="Awaiting collection / on the road" to="/admin/fulfilment" />
+            <StatTile label="Out of stock" value={today.data.inventory.outOfStock} sub={`${today.data.inventory.lowStock} more running low`} to="/admin/inventory" />
+            <StatTile label="Specials running" value={today.data.specials.active} sub="Products on sale" to="/admin/specials" />
+          </div>
+        </section>
+      )}
+      <h2 className="today__title">All time</h2>
       <section className="stats" aria-label="Key figures">
         <StatTile label="Revenue (paid orders)" value={formatPrice(data.sales.revenue)} sub={`${formatPrice(data.sales.last30Days)} in the last 30 days`} />
         <StatTile label="Paid orders" value={data.orders.paid} sub={`${data.orders.total} checkouts started`} to="/admin/orders?paymentStatus=PAID" />
         <StatTile label="Average order" value={formatPrice(data.sales.averageOrder)} sub={`${data.sales.ordersLast30Days} orders in 30 days`} />
         <StatTile label="Products" value={data.products.total} sub={`${data.products.active} active · ${data.products.deli} deli items`} to="/admin/products" />
-        <StatTile label="Customers" value={data.customers} sub={`${data.subscribers} newsletter subscribers`} />
+        <StatTile label="Customer accounts" value={data.customers} sub={`${data.subscribers} newsletter subscribers`} to="/admin/customers" />
         <StatTile label="Messages" value={data.messages} sub="Contact form enquiries" to="/admin/messages" />
       </section>
 

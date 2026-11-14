@@ -58,6 +58,7 @@ model Product {
   image       String
   price       Int // cents; for deli items this is the lowest portion price
   compareAtPrice Int? // cents; original price when the item is on special ("Weekly Specials")
+  specialEndsAt DateTime? // optional: when the special ends, price reverts to compareAtPrice automatically
   unit        String? // e.g. "5 lb bag", "12 oz bottle"
   categoryId  Int
   category    Category        @relation(fields: [categoryId], references: [id])
@@ -115,6 +116,8 @@ model Order {
   billingName           String?
   billingAddress        String? // JSON string captured from Stripe
   inventoryShortfall    Boolean     @default(false) // set if stock ran out between checkout and payment
+  refundedAmount        Int         @default(0) // cents refunded through Stripe so far
+  refundedAt            DateTime?
   paidAt                DateTime?
   confirmationEmailSentAt DateTime?
   createdAt             DateTime    @default(now())
@@ -160,4 +163,39 @@ model ContactMessage {
   subject   String
   message   String
   createdAt DateTime @default(now())
+}
+
+// Store settings edited from the admin dashboard (single row, id = 1).
+// Any field left null falls back to the value from the server environment (.env).
+model StoreSettings {
+  id                         Int      @id @default(1)
+  taxRate                    Float?
+  deliveryEnabled            Boolean?
+  deliveryFeeCents           Int?
+  freeDeliveryThresholdCents Int?
+  deliveryNote               String?
+  pickupEnabled              Boolean?
+  pickupInstructions         String?
+  storeAddress               String?
+  storePhone                 String?
+  storeEmail                 String?
+  storeHours                 String?
+  announcement               String?
+  updatedAt                  DateTime @updatedAt
+}
+
+// Audit trail of admin actions (who changed what, and when).
+model AdminActivity {
+  id         Int      @id @default(autoincrement())
+  createdAt  DateTime @default(now())
+  userId     Int?
+  userName   String
+  userEmail  String
+  action     String // e.g. PRODUCT_UPDATED, ORDER_REFUNDED, SETTINGS_UPDATED
+  entityType String? // PRODUCT | ORDER | CATEGORY | USER | SETTINGS | INVENTORY | SPECIAL
+  entityId   String?
+  summary    String
+
+  @@index([createdAt])
+  @@index([action])
 }

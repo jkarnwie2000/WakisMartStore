@@ -10,6 +10,7 @@ const DEFAULTS = {
   store: { address: '', phone: '', email: '', hours: '' },
   payments: { stripeConfigured: false, publishableKey: null },
   email: { confirmations: false },
+  announcement: '',
   loaded: false,
 };
 

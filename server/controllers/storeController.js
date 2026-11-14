@@ -2,15 +2,17 @@ import { z } from 'zod';
 import { prisma } from '../utils/prisma.js';
 import { env, stripeConfigured } from '../config/env.js';
 import { emailConfigured } from '../services/email.js';
+import { getStoreSettings } from '../services/settings.js';
 
-export function getConfig(_req, res) {
-  const { store } = env;
+export async function getConfig(_req, res) {
+  const store = await getStoreSettings();
   res.json({
     currency: store.currency,
     taxRate: store.taxRate,
     delivery: store.delivery,
     pickup: store.pickup,
     store: { address: store.address, phone: store.phone, email: store.email, hours: store.hours },
+    announcement: store.announcement || '',
     payments: { stripeConfigured: stripeConfigured(), publishableKey: env.stripe.publishableKey || null },
     email: { confirmations: emailConfigured() },
   });

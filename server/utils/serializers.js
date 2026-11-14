@@ -61,6 +61,8 @@ export function serializeOrder(o, { admin = false } = {}) {
     paymentStatus: o.paymentStatus,
     status: o.status,
     paidAt: o.paidAt,
+    refundedAmount: o.refundedAmount ?? 0,
+    refundedAt: o.refundedAt ?? null,
     createdAt: o.createdAt,
     updatedAt: o.updatedAt,
     items: (o.items || []).map((i) => ({

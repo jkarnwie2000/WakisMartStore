@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { prisma } from '../utils/prisma.js';
 import { serializeProduct } from '../utils/serializers.js';
 import { notFound } from '../utils/httpError.js';
+import { expireSpecials } from '../services/specials.js';
 
 const listQuery = z.object({
   search: z.string().trim().max(100).optional(),
@@ -89,6 +90,7 @@ function buildWhere(q, { admin }) {
 
 export async function listProducts(req, res, { admin = false } = {}) {
   const q = listQuery.parse(req.query);
+  await expireSpecials();
   const page = q.page || 1;
   const limit = q.limit || 24;
   const base = buildWhere(q, { admin });
@@ -125,6 +127,7 @@ export async function listProducts(req, res, { admin = false } = {}) {
 }
 
 export async function getProduct(req, res) {
+  await expireSpecials();
   const product = await prisma.product.findFirst({
     where: { slug: req.params.slug, isActive: true },
     include: { category: true, portions: true },
@@ -150,6 +153,7 @@ export async function getProduct(req, res) {
 }
 
 export async function getHome(_req, res) {
+  await expireSpecials();
   const include = { category: true, portions: true };
   const active = { isActive: true };
   const [bestSellers, african, caribbean, deli, specials, featured, categories] = await Promise.all([

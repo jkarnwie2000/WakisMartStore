@@ -3,6 +3,7 @@ import { prisma } from '../utils/prisma.js';
 import { env } from '../config/env.js';
 import { resolveCart, computeTotals } from '../services/pricing.js';
 import { getStripe } from '../services/stripe.js';
+import { getStoreSettings } from '../services/settings.js';
 import { generateOrderNumber } from '../utils/orderNumber.js';
 import { badRequest, conflict, HttpError } from '../utils/httpError.js';
 import { MAX_QTY_PER_LINE } from '../utils/constants.js';
@@ -47,29 +48,30 @@ const quoteSchema = z.object({
   fulfillmentMethod: z.enum(['DELIVERY', 'PICKUP']).optional(),
 });
 
-function assertMethodEnabled(method) {
-  if (method === 'DELIVERY' && !env.store.delivery.enabled) throw badRequest('Home delivery is not currently available.');
-  if (method === 'PICKUP' && !env.store.pickup.enabled) throw badRequest('Store pickup is not currently available.');
+function assertMethodEnabled(method, settings) {
+  if (method === 'DELIVERY' && !settings.delivery.enabled) throw badRequest('Home delivery is not currently available.');
+  if (method === 'PICKUP' && !settings.pickup.enabled) throw badRequest('Store pickup is not currently available.');
 }
 
 /** POST /api/cart/validate — refreshes cart lines with live prices and stock. */
 export async function validateCart(req, res) {
   const { items } = cartSchema.parse(req.body);
   const { lines, issues } = await resolveCart(items);
-  res.json({ lines, issues, totals: computeTotals(lines, 'PICKUP') });
+  res.json({ lines, issues, totals: computeTotals(lines, 'PICKUP', await getStoreSettings()) });
 }
 
 /** POST /api/checkout/quote — totals for the checkout summary (no order is created). */
 export async function quote(req, res) {
   const { items, fulfillmentMethod = 'PICKUP' } = quoteSchema.parse(req.body);
   const { lines, issues } = await resolveCart(items);
-  res.json({ lines, issues, totals: computeTotals(lines, fulfillmentMethod) });
+  res.json({ lines, issues, totals: computeTotals(lines, fulfillmentMethod, await getStoreSettings()) });
 }
 
 /** POST /api/checkout/session — creates a PENDING order and a Stripe Checkout Session for it. */
 export async function createCheckoutSession(req, res) {
   const body = checkoutSchema.parse(req.body);
-  assertMethodEnabled(body.fulfillment.method);
+  const settings = await getStoreSettings();
+  assertMethodEnabled(body.fulfillment.method, settings);
   const stripe = getStripe(); // throws 503 if Stripe keys are missing
 
   const { lines, issues } = await resolveCart(body.items);
@@ -80,7 +82,7 @@ export async function createCheckoutSession(req, res) {
   }
   if (lines.length === 0) throw badRequest('Your cart is empty.');
 
-  const totals = computeTotals(lines, body.fulfillment.method);
+  const totals = computeTotals(lines, body.fulfillment.method, settings);
   const address = body.fulfillment.method === 'DELIVERY' ? body.fulfillment.address : null;
 
   const order = await prisma.order.create({

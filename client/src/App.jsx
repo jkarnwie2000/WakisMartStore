@@ -24,6 +24,16 @@ const AdminOrders = lazy(() => import('./pages/admin/AdminOrders.jsx').then((m) 
 const AdminOrderDetail = lazy(() => import('./pages/admin/AdminOrders.jsx').then((m) => ({ default: m.AdminOrderDetail })));
 const AdminCategories = lazy(() => import('./pages/admin/AdminMisc.jsx').then((m) => ({ default: m.AdminCategories })));
 const AdminUsers = lazy(() => import('./pages/admin/AdminUsers.jsx'));
+const AdminReports = lazy(() => import('./pages/admin/AdminReports.jsx'));
+const AdminFulfilment = lazy(() => import('./pages/admin/AdminFulfilment.jsx').then((m) => ({ default: m.AdminFulfilment })));
+const AdminPickList = lazy(() => import('./pages/admin/AdminFulfilment.jsx').then((m) => ({ default: m.AdminPickList })));
+const AdminPackingSlip = lazy(() => import('./pages/admin/AdminFulfilment.jsx').then((m) => ({ default: m.AdminPackingSlip })));
+const AdminSettings = lazy(() => import('./pages/admin/AdminSettings.jsx'));
+const AdminInventory = lazy(() => import('./pages/admin/AdminInventory.jsx'));
+const AdminCustomers = lazy(() => import('./pages/admin/AdminCustomers.jsx').then((m) => ({ default: m.AdminCustomers })));
+const AdminCustomerDetail = lazy(() => import('./pages/admin/AdminCustomers.jsx').then((m) => ({ default: m.AdminCustomerDetail })));
+const AdminSpecials = lazy(() => import('./pages/admin/AdminSpecials.jsx'));
+const AdminActivity = lazy(() => import('./pages/admin/AdminActivity.jsx'));
 const AdminMessages = lazy(() => import('./pages/admin/AdminMisc.jsx').then((m) => ({ default: m.AdminMessages })));
 
 export default function App() {
@@ -62,6 +72,16 @@ export default function App() {
         <Route path="deli" element={<AdminProducts key="deli" deliMode />} />
         <Route path="orders" element={<AdminOrders />} />
         <Route path="orders/:id" element={<AdminOrderDetail />} />
+        <Route path="orders/:id/slip" element={<AdminPackingSlip />} />
+        <Route path="reports" element={<AdminReports />} />
+        <Route path="fulfilment" element={<AdminFulfilment />} />
+        <Route path="fulfilment/pick-list" element={<AdminPickList />} />
+        <Route path="settings" element={<AdminSettings />} />
+        <Route path="inventory" element={<AdminInventory />} />
+        <Route path="customers" element={<AdminCustomers />} />
+        <Route path="customers/view" element={<AdminCustomerDetail />} />
+        <Route path="specials" element={<AdminSpecials />} />
+        <Route path="activity" element={<AdminActivity />} />
         <Route path="categories" element={<AdminCategories />} />
         <Route path="users" element={<AdminUsers />} />
         <Route path="messages" element={<AdminMessages />} />

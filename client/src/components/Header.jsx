@@ -6,8 +6,19 @@ import SearchBar from './SearchBar.jsx';
 import { useCart } from '../context/CartContext.jsx';
 import { useAuth } from '../context/AuthContext.jsx';
 import { DEPARTMENTS } from '../utils/departments.js';
+import { useStoreConfig } from '../context/StoreContext.jsx';
 
 export function AnnouncementBar() {
+  const { announcement } = useStoreConfig();
+  if (announcement) {
+    return (
+      <div className="announcement">
+        <p>
+          <Icon name="flame" size={15} /> {announcement}
+        </p>
+      </div>
+    );
+  }
   return (
     <div className="announcement">
       <p>

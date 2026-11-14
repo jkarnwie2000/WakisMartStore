@@ -3,6 +3,7 @@
 // email address that owns the Resend account; set EMAIL_FROM to an address on your verified
 // domain (e.g. "Wakis Mart <orders@wakismart.com>") to email any customer.
 import { env } from '../config/env.js';
+import { getStoreSettings } from './settings.js';
 
 const RESEND_URL = 'https://api.resend.com/emails';
 const DEFAULT_FROM = 'Wakis Mart <onboarding@resend.dev>';
@@ -13,8 +14,8 @@ const esc = (s) =>
   String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 const money = (cents, currency = 'usd') => new Intl.NumberFormat('en-US', { style: 'currency', currency: currency.toUpperCase() }).format(cents / 100);
 
-export function renderOrderConfirmation(order) {
-  const store = env.store; // { address, phone, email, delivery, pickup, … }
+export function renderOrderConfirmation(order, store = env.store) {
+  // store: { address, phone, email, delivery, pickup, … } — dashboard settings merged over .env
   const { delivery, pickup } = store;
   const isDelivery = order.fulfillmentMethod === 'DELIVERY';
   const firstName = order.customerName.split(' ')[0];
@@ -88,7 +89,8 @@ export function renderOrderConfirmation(order) {
 export async function sendOrderConfirmation(order, { idempotencyKey = `order-confirmation-${order.orderNumber}` } = {}) {
   if (!emailConfigured()) return { sent: false, error: 'RESEND_API_KEY not set' };
   try {
-    const { subject, html, text } = renderOrderConfirmation(order);
+    const store = await getStoreSettings().catch(() => env.store);
+    const { subject, html, text } = renderOrderConfirmation(order, store);
     const res = await fetch(RESEND_URL, {
       method: 'POST',
       headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}`, 'Content-Type': 'application/json', 'Idempotency-Key': idempotencyKey },

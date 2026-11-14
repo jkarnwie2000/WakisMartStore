@@ -6,6 +6,20 @@ import { badRequest, notFound, conflict } from '../utils/httpError.js';
 import { ORDER_STATUSES, ORIGINS, LOW_STOCK_THRESHOLD, ROLES } from '../utils/constants.js';
 import { listProducts } from './productController.js';
 import { storeImage } from '../middleware/upload.js';
+import { logActivity } from '../services/activity.js';
+
+const usd = (cents) => `${(cents / 100).toFixed(2)}`;
+/** Human-readable summary of what changed on a product (for the activity log). */
+function productDiff(before, after) {
+  const out = [];
+  if (before.price !== after.price) out.push(`price ${usd(before.price)} → ${usd(after.price)}`);
+  if ((before.compareAtPrice ?? null) !== (after.compareAtPrice ?? null)) out.push(after.compareAtPrice ? `on special (was ${usd(after.compareAtPrice)})` : 'special removed');
+  if (before.inventory !== after.inventory) out.push(`stock ${before.inventory} → ${after.inventory}`);
+  if (before.isActive !== after.isActive) out.push(after.isActive ? 'made visible' : 'hidden from store');
+  if (before.featured !== after.featured) out.push(after.featured ? 'featured' : 'unfeatured');
+  if (before.name !== after.name) out.push(`renamed from "${before.name}"`);
+  return out.join(', ') || 'details edited';
+}
 import { emailConfigured, sendOrderConfirmation } from '../services/email.js';
 
 const money = z.coerce.number().min(0).max(100000).transform((d) => Math.round(d * 100)); // dollars → cents
@@ -150,6 +164,7 @@ export async function createProduct(req, res) {
     data: { ...data, portions: { create: portions.map((p, i) => ({ label: p.label, price: p.price, sortOrder: i })) } },
     include: { category: true, portions: true },
   });
+  await logActivity(req, 'PRODUCT_CREATED', `Created ${product.name} (${product.sku}) at ${usd(product.price)}, stock ${product.inventory}`, { entityType: 'PRODUCT', entityId: product.id });
   res.status(201).json({ product: serializeProduct(product, { admin: true }) });
 }
 
@@ -158,8 +173,9 @@ export async function updateProduct(req, res) {
   const parsed = productSchema.parse(req.body);
   const { data, portions } = productData(parsed);
   data.slug = await uniqueSlug(data.slug, id);
+  let before;
   const product = await prisma.$transaction(async (tx) => {
-    await tx.product.findUniqueOrThrow({ where: { id } });
+    before = await tx.product.findUniqueOrThrow({ where: { id } });
     await tx.portionOption.deleteMany({ where: { productId: id } });
     return tx.product.update({
       where: { id },
@@ -167,6 +183,7 @@ export async function updateProduct(req, res) {
       include: { category: true, portions: true },
     });
   });
+  await logActivity(req, 'PRODUCT_UPDATED', `${product.name}: ${productDiff(before, product)}`, { entityType: 'PRODUCT', entityId: id });
   res.json({ product: serializeProduct(product, { admin: true }) });
 }
 
@@ -174,14 +191,18 @@ export async function patchProduct(req, res) {
   const id = idParam(req);
   const data = patchSchema.parse(req.body);
   if (Object.keys(data).length === 0) throw badRequest('Nothing to update.');
+  const before = await prisma.product.findUnique({ where: { id } });
+  if (!before) throw notFound('Product not found.');
   const product = await prisma.product.update({ where: { id }, data, include: { category: true, portions: true } });
+  await logActivity(req, 'PRODUCT_UPDATED', `${product.name}: ${productDiff(before, product)}`, { entityType: 'PRODUCT', entityId: id });
   res.json({ product: serializeProduct(product, { admin: true }) });
 }
 
 export async function deleteProduct(req, res) {
   const id = idParam(req);
   // Past order items keep their own name/price snapshot; their product link is set to null.
-  await prisma.product.delete({ where: { id } });
+  const removed = await prisma.product.delete({ where: { id } });
+  await logActivity(req, 'PRODUCT_DELETED', `Deleted ${removed.name} (${removed.sku})`, { entityType: 'PRODUCT', entityId: id });
   res.json({ ok: true });
 }
 
@@ -201,6 +222,7 @@ export async function createCategory(req, res) {
   const category = await prisma.category.create({
     data: { name: data.name, slug: slugify(data.name), description: data.description || null, image: data.image || null, sortOrder: data.sortOrder ?? 100 },
   });
+  await logActivity(req, 'CATEGORY_CREATED', `Created category ${category.name}`, { entityType: 'CATEGORY', entityId: category.id });
   res.status(201).json({ category });
 }
 
@@ -214,6 +236,7 @@ export async function updateCategory(req, res) {
     where: { id },
     data: { name: data.name, description: data.description || null, image: data.image || null, ...(data.sortOrder != null && { sortOrder: data.sortOrder }) },
   });
+  await logActivity(req, 'CATEGORY_UPDATED', `Updated category ${existing.name}${existing.name !== category.name ? ` → ${category.name}` : ''}`, { entityType: 'CATEGORY', entityId: id });
   res.json({ category });
 }
 
@@ -221,7 +244,8 @@ export async function deleteCategory(req, res) {
   const id = idParam(req);
   const count = await prisma.product.count({ where: { categoryId: id } });
   if (count > 0) throw conflict(`This category still has ${count} products. Move or delete them first.`);
-  await prisma.category.delete({ where: { id } });
+  const removedCategory = await prisma.category.delete({ where: { id } });
+  await logActivity(req, 'CATEGORY_DELETED', `Deleted category ${removedCategory.name}`, { entityType: 'CATEGORY', entityId: id });
   res.json({ ok: true });
 }
 
@@ -274,6 +298,7 @@ export async function updateOrderStatus(req, res) {
   if (status === 'READY_FOR_PICKUP' && order.fulfillmentMethod !== 'PICKUP') throw badRequest('This is a delivery order.');
   if (status === 'OUT_FOR_DELIVERY' && order.fulfillmentMethod !== 'DELIVERY') throw badRequest('This is a pickup order.');
   const updated = await prisma.order.update({ where: { id }, data: { status }, include: { items: true } });
+  await logActivity(req, 'ORDER_STATUS_CHANGED', `${order.orderNumber}: ${order.status} → ${status}`, { entityType: 'ORDER', entityId: id });
   res.json({ order: serializeOrder(updated, { admin: true }) });
 }
 
@@ -286,6 +311,7 @@ export async function resendConfirmation(req, res) {
   const result = await sendOrderConfirmation(order, { idempotencyKey: `order-confirmation-${order.orderNumber}-resend-${Date.now()}` });
   if (!result.sent) throw badRequest(`The email could not be sent: ${result.error}`);
   const updated = await prisma.order.update({ where: { id }, data: { confirmationEmailSentAt: new Date() }, include: { items: true } });
+  await logActivity(req, 'ORDER_EMAIL_RESENT', `Resent confirmation email for ${order.orderNumber}`, { entityType: 'ORDER', entityId: id });
   res.json({ order: serializeOrder(updated, { admin: true }), message: `Confirmation emailed to ${order.customerEmail}.` });
 }
 
@@ -314,6 +340,7 @@ export async function updateUserRole(req, res) {
     throw badRequest('There must always be at least one administrator.');
   }
   const user = await prisma.user.update({ where: { id }, data: { role }, select: { id: true, name: true, email: true, role: true, createdAt: true } });
+  await logActivity(req, role === 'ADMIN' ? 'ADMIN_GRANTED' : 'ADMIN_REVOKED', `${role === 'ADMIN' ? 'Granted' : 'Removed'} admin access ${role === 'ADMIN' ? 'to' : 'from'} ${user.name} (${user.email})`, { entityType: 'USER', entityId: id });
   res.json({ user, message: role === 'ADMIN' ? `${user.name} is now an administrator.` : `${user.name} no longer has admin access.` });
 }
 

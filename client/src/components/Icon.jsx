@@ -30,6 +30,7 @@ const PATHS = {
   chat: 'M4 5h16v11H8l-4 4Z',
   logout: 'M15 4h4v16h-4M10 8l-4 4 4 4M6 12h10',
   upload: 'M12 16V4m-5 5 5-5 5 5M4 20h16',
+  download: 'M12 4v12m-5-5 5 5 5-5M4 20h16',
   edit: 'M4 20h4L19 9l-4-4L4 16Zm9-13 4 4',
   eye: 'M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Zm10 3a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z',
 };

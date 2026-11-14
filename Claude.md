@@ -4,7 +4,7 @@ Wakis Mart Deli & Grocery e-commerce app. JavaScript only (no TypeScript). See R
 
 ## Layout
 - `client/` React 19 + Vite 6 + React Router 7. Global state via Context (`src/context/`). All styles in `src/styles/global.css` (design tokens on `:root`).
-- `server/` Express 5 + Prisma 6 on PostgreSQL (Neon). Routes in `server/routes/index.js`.
+- `server/` Express 5 + Prisma 6 on PostgreSQL (Neon). Routes in `server/routes/index.js`. Admin dashboard endpoints: `controllers/adminController.js` (products, categories, orders, users) and `controllers/adminSuiteController.js` (reports, exports, fulfilment, refunds, settings, inventory, customers, specials, activity).
 - Vercel: `vercel.json` builds `client/dist`; `api/index.js` exports the Express app as the serverless function. Uploads go to Vercel Blob when `BLOB_READ_WRITE_TOKEN` is set. `NODEJS_HELPERS=0` is required on Vercel so the Stripe webhook gets the raw body.
 - One `.env` at the repo root, loaded by `server/config/env.js` (Prisma CLI scripts use `dotenv -e ../.env`).
 
@@ -19,6 +19,9 @@ Wakis Mart Deli & Grocery e-commerce app. JavaScript only (no TypeScript). See R
 - The webhook route is mounted with `express.raw` **before** `express.json` in `app.js`.
 - Deli items have `PortionOption`s; product.price = cheapest portion. Stock is shared across portions.
 - Every `/api/admin/*` route goes through `requireAdmin`; client guards are UX only.
+- Store settings: read them with `getStoreSettings()` (services/settings.js) — dashboard values override `.env`. Never read `env.store` directly for tax, delivery, pickup or store details. Pass settings into `computeTotals(lines, method, settings)`.
+- Specials: call `expireSpecials()` before reading catalogue prices or pricing a cart, so an ended special is never charged.
+- Admin actions that change data should call `logActivity(req, ACTION, summary, { entityType, entityId })` (services/activity.js). It never throws.
 - Enum-like fields are validated strings — see `server/utils/constants.js`. Text search must use `mode: 'insensitive'` (Postgres is case-sensitive).
 - React effects must use block bodies: `useEffect(() => { … })`. Expression bodies like `useEffect(() => window.scrollTo(0, 0))` return a Promise in current Chromium and crash React on unmount.
 

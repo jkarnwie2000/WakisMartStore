@@ -51,20 +51,24 @@ Everything is written in JavaScript (no TypeScript): React + Vite on the front e
 **Accounts & admin**
 - Registration, login and logout, profile and saved address, password change, **forgot / reset password** (emailed single-use link, 1-hour expiry; resetting signs out other sessions), and order history with detail pages. Passwords are hashed with bcrypt, and sessions use a JWT in an httpOnly, SameSite cookie. Guest checkout is supported.
 - **Admin sign-in page** at `/admin/login` (linked from the footer) with forgot-password and create-account links. New accounts are always customers; existing admins grant or remove admin access on the **Users** page, and the last admin can never be demoted.
-- **Admin dashboard** (role-based; every `/api/admin/*` route is protected on the server):
-  - KPIs: revenue, paid orders, average order value, customers, messages
-  - Orders-by-status chart, top sellers, low-stock list and recent orders
-  - Product CRUD with image upload, portion editor, compare-at ("special") price, inline inventory edits, and active / featured toggles
-  - A dedicated **Deli availability** screen
-  - Category management
-  - Order list with filters and search, and status updates (Pending → Paid → Processing → Ready for Pickup / Out for Delivery → Completed / Cancelled) with workflow rules
-  - Contact messages and newsletter subscribers
+- **Admin dashboard** (role-based; every `/api/admin/*` route is protected on the server), reached from the footer **Admin Link**:
+  - **Dashboard:** a "Today" strip (revenue, orders to pack, ready / out for delivery, out-of-stock, specials running) plus all-time KPIs, orders by status, top sellers, low stock and recent orders
+  - **Sales reports:** revenue per day / week / month (7 days to 12 months), sales by department, best sellers and slow movers, pickup vs delivery split, tax and delivery-fee totals, with CSV export of sales and orders
+  - **Fulfilment board:** paid orders in "To pack", "Ready for pickup" and "Out for delivery" columns with one-click status buttons, a printable **pick list** (items totalled across orders) and printable **packing slips**
+  - **Stripe refunds** from the order page: full or partial, optional restock on full refunds; fully refunded orders are cancelled automatically
+  - **Orders:** search and filter, status workflow (Pending → Paid → Processing → Ready for Pickup / Out for Delivery → Completed / Cancelled), resend confirmation emails
+  - **Customers:** registered and guest customers with order count, total spent (net of refunds) and last order; per-customer order history; CSV export
+  - **Products:** CRUD with image upload, portion editor, compare-at ("special") price, inline stock edits, active / featured toggles; **Deli availability** for today's portions
+  - **Inventory:** out-of-stock and low-stock views, bulk restock ("add N" / "set to N"), quick +12/+24/+48 buttons, stock value by department, and CSV export / import of stock and prices with a preview before anything changes
+  - **Specials manager:** put many products on sale at once (e.g. 15% off a department) with an optional end date; prices revert automatically when a special ends
+  - **Store settings:** tax rate, delivery on/off, fee and free-delivery threshold, delivery note, pickup on/off and instructions, store address / phone / email / hours and the announcement-bar message, all with no redeploy
+  - **Users & access:** grant or remove admin access (no self-changes; the last admin can't be demoted); **Activity log** of who changed prices, stock, orders, refunds, specials, settings or access; categories; contact messages and newsletter subscribers
 
 **Quality**
 - Responsive from 360 px phones to wide desktops: mobile drawer navigation, slide-in filter panel, and stacked cart and checkout layouts.
 - Accessibility: semantic HTML and landmarks, skip link, labelled form controls with `aria-invalid` / `aria-describedby`, a keyboard-navigable search combobox, visible focus rings, AA-contrast colour tokens, `prefers-reduced-motion` support, and descriptive alt text.
 - Lazy-loaded images, a code-split admin bundle, Helmet security headers with a CSP, rate-limited auth and checkout endpoints, and Zod validation on every input.
-- 38 automated API tests and a clean ESLint run on client and server.
+- 48 automated API tests and a clean ESLint run on client and server.
 
 ## Technology stack
 
@@ -256,7 +260,7 @@ In development, Vite proxies `/api` and `/uploads` to Express, so the browser ta
 ## Automated tests & linting
 
 ```bash
-npm test      # 38 API tests (node:test)
+npm test      # 48 API tests (node:test)
 npm run lint  # ESLint for client and server
 ```
 
@@ -268,6 +272,7 @@ The test runner creates a **uniquely named temporary Postgres schema** (e.g. `wm
 - Webhook signature rejection, **verified payment → order paid + inventory decremented once**, duplicate and replayed events, delayed payment methods, expired sessions, and stock-shortfall flagging
 - Confirmation emails: sent exactly once per paid order, never block payment if Resend fails, HTML-escaped, admin resend
 - Password reset (single-use hashed tokens, expiry, no account enumeration, session revocation) and admin role management (self-change and last-admin guards)
+- Admin suite: sales report maths, CSV exports (including spreadsheet-formula neutralising), fulfilment board and pick list, refund validation, dashboard settings driving checkout totals, bulk restock and CSV import preview, guest + registered customer totals, specials (deli skipped, checkout uses sale price, auto-expiry), and the activity log
 - Registration and password hashing, login and logout, profile, per-customer order isolation, admin authorization (401/403), product CRUD, deli availability, the order-status workflow, newsletter and contact
 
 Webhook tests use Stripe's own `generateTestHeaderString` to sign events locally, so they need no network or Stripe account. Creating a real Checkout Session needs your Stripe test key; verify that step manually as described [above](#testing-stripe-payments).
@@ -320,13 +325,16 @@ No code changes are needed to switch from test to live; it is configuration only
 | `POST /api/auth/forgot-password`, `POST /api/auth/reset-password` | – | Password reset by emailed link |
 | `GET /api/orders/mine`, `GET /api/orders/mine/:orderNumber` | customer | Order history |
 | `POST /api/newsletter`, `POST /api/contact` | – | Newsletter sign-up, contact form |
-| `/api/admin/*` | **admin** | Stats, products CRUD + PATCH, uploads, categories, orders + status, users + roles, messages |
+| `/api/admin/*` | **admin** | Stats & overview, sales reports, CSV exports, fulfilment board & pick list, refunds, store settings, inventory (summary, bulk, CSV import), customers, specials, activity log, products CRUD + PATCH, uploads, categories, orders + status, users + roles, messages |
 
 ## Known limitations
 
 - **Product images are branded placeholders**, not real photography. Each product has its own SVG illustration in `client/public/images/products/`. Replace a file with a photo using the same name, or upload a photo for that product in **Admin → Products → Edit**.
 - **Seed prices and testimonials are samples** and should be replaced with real data.
 - **Emails:** order confirmations need a Resend API key. Until you verify a domain in Resend and set `EMAIL_FROM`, Resend only delivers to the address that owns the Resend account, so other customers won't receive emails. Stripe can also send its own receipts in live mode (**Settings → Customer emails**).
-- **Tax** is a single configurable rate, not jurisdiction-aware. Stripe Tax could replace it later.
+- **Tax** is a single configurable rate (editable in Admin → Store settings), not jurisdiction-aware. Stripe Tax could replace it later.
+- **Specials** start as soon as they are created (an end date is optional); scheduled future start dates would need a background job.
+- **Stock value** in Inventory is calculated at retail price, because the catalogue has no cost prices.
+- **Store settings** are cached for up to 30 seconds per server instance, so a change can take up to a minute to appear everywhere.
 - **Inventory** is reserved at payment time, not when the cart is created. Oversells between checkout and payment are flagged on the order for staff follow-up.
 - `npm audit` reports an advisory in `deepmerge-ts`, used only by the Prisma **CLI** (a dev tool, not shipped at runtime). The fix requires Prisma 7, which is a breaking upgrade.

@@ -9,6 +9,7 @@ import * as orders from '../controllers/orderController.js';
 import * as auth from '../controllers/authController.js';
 import * as store from '../controllers/storeController.js';
 import * as admin from '../controllers/adminController.js';
+import * as suite from '../controllers/adminSuiteController.js';
 
 const limiter = (max, windowMinutes = 15) =>
   rateLimit({
@@ -76,4 +77,25 @@ adminRouter.post('/orders/:id/resend-confirmation', admin.resendConfirmation);
 adminRouter.get('/users', admin.listUsers);
 adminRouter.patch('/users/:id/role', admin.updateUserRole);
 adminRouter.get('/messages', admin.listMessages);
+adminRouter.get('/overview', suite.overview);
+adminRouter.get('/reports/sales', suite.salesReport);
+adminRouter.get('/exports/orders.csv', suite.exportOrders);
+adminRouter.get('/exports/sales.csv', suite.exportSales);
+adminRouter.get('/exports/products.csv', suite.exportProducts);
+adminRouter.get('/exports/customers.csv', suite.exportCustomers);
+adminRouter.get('/fulfilment', suite.fulfilmentBoard);
+adminRouter.get('/fulfilment/pick-list', suite.pickList);
+adminRouter.post('/orders/:id/refund', suite.refundOrder);
+adminRouter.get('/settings', suite.getSettings);
+adminRouter.put('/settings', suite.updateSettings);
+adminRouter.get('/inventory', suite.inventoryList);
+adminRouter.get('/inventory/summary', suite.inventorySummary);
+adminRouter.post('/inventory/bulk', suite.bulkInventory);
+adminRouter.post('/inventory/import', suite.importInventory);
+adminRouter.get('/customers', suite.listCustomers);
+adminRouter.get('/customers/detail', suite.customerDetail);
+adminRouter.get('/specials', suite.listSpecials);
+adminRouter.post('/specials', suite.createSpecial);
+adminRouter.post('/specials/end', suite.deleteSpecials);
+adminRouter.get('/activity', suite.listActivity);
 api.use('/admin', adminRouter);

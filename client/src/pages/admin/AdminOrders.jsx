@@ -135,6 +135,76 @@ export function AdminOrders() {
   );
 }
 
+/** Stripe refund form: full or partial amount, optional restock (full refunds only). */
+function RefundPanel({ order, refundable, onDone }) {
+  const { notify } = useToast();
+  const [mode, setMode] = useState('full');
+  const [amount, setAmount] = useState('');
+  const [restock, setRestock] = useState(true);
+  const [reason, setReason] = useState('');
+  const [busy, setBusy] = useState(false);
+
+  const submit = async (e) => {
+    e.preventDefault();
+    const cents = mode === 'full' ? refundable : Math.round(Number(amount) * 100);
+    if (!cents || cents < 1 || cents > refundable) {
+      notify(`Enter an amount between $0.01 and ${formatPrice(refundable)}.`, { type: 'error' });
+      return;
+    }
+    const msg = `Refund ${formatPrice(cents)} to ${order.customerName}'s original payment method${mode === 'full' ? ' and cancel the order' : ''}? This cannot be undone.`;
+    if (!window.confirm(msg)) return;
+    setBusy(true);
+    try {
+      const r = await api.admin.refundOrder(order.id, {
+        ...(mode === 'partial' && { amount: cents / 100 }),
+        restock: mode === 'full' && restock,
+        reason,
+      });
+      onDone(r.order);
+      notify(r.message);
+      setAmount('');
+      setReason('');
+    } catch (err) {
+      notify(err.message, { type: 'error' });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <form className="order-block refund" onSubmit={submit}>
+      <h3>Refund</h3>
+      <p className="muted">Up to {formatPrice(refundable)} can be refunded through Stripe.</p>
+      <div className="refund__modes" role="radiogroup" aria-label="Refund amount">
+        <label className="check">
+          <input type="radio" name="refund-mode" checked={mode === 'full'} onChange={() => setMode('full')} /> <span>Full refund ({formatPrice(refundable)})</span>
+        </label>
+        <label className="check">
+          <input type="radio" name="refund-mode" checked={mode === 'partial'} onChange={() => setMode('partial')} /> <span>Partial refund</span>
+        </label>
+      </div>
+      {mode === 'partial' && (
+        <label className="refund__amount">
+          <span>Amount ($)</span>
+          <input type="number" min="0.01" step="0.01" max={(refundable / 100).toFixed(2)} value={amount} onChange={(e) => setAmount(e.target.value)} required />
+        </label>
+      )}
+      {mode === 'full' && (
+        <label className="check">
+          <input type="checkbox" checked={restock} onChange={(e) => setRestock(e.target.checked)} /> <span>Put the items back in stock</span>
+        </label>
+      )}
+      <label className="refund__amount">
+        <span>Reason (for the activity log)</span>
+        <input type="text" maxLength={300} value={reason} onChange={(e) => setReason(e.target.value)} placeholder="e.g. item out of stock" />
+      </label>
+      <button type="submit" className="btn btn--outline btn--sm refund__btn" disabled={busy}>
+        {busy ? 'Refunding…' : 'Issue refund'}
+      </button>
+    </form>
+  );
+}
+
 const NEXT_STATUSES = {
   PICKUP: ['PAID', 'PROCESSING', 'READY_FOR_PICKUP', 'COMPLETED', 'CANCELLED'],
   DELIVERY: ['PAID', 'PROCESSING', 'OUT_FOR_DELIVERY', 'COMPLETED', 'CANCELLED'],
@@ -181,6 +251,7 @@ export function AdminOrderDetail() {
   };
 
   const billing = order.billingAddress;
+  const refundable = order.paymentStatus === 'PAID' && order.stripePaymentIntentId ? order.total - (order.refundedAmount || 0) : 0;
   return (
     <div className="admin-page">
       <Link to="/admin/orders" className="back-link">
@@ -188,6 +259,9 @@ export function AdminOrderDetail() {
       </Link>
       <div className="admin-head">
         <h1>Order {order.orderNumber}</h1>
+        <Link to={`/admin/orders/${order.id}/slip`} className="btn btn--outline btn--sm">
+          <Icon name="receipt" size={14} /> Packing slip
+        </Link>
         <label className="status-select">
           <span>Update status</span>
           <select value={order.status} disabled={saving} onChange={(e) => update(e.target.value)}>
@@ -199,6 +273,11 @@ export function AdminOrderDetail() {
           </select>
         </label>
       </div>
+      {order.refundedAmount > 0 && (
+        <Alert type="info" title={order.paymentStatus === 'REFUNDED' ? 'Fully refunded' : 'Partially refunded'}>
+          {formatPrice(order.refundedAmount)} refunded{order.refundedAt ? ` on ${formatDate(order.refundedAt, true)}` : ''}.
+        </Alert>
+      )}
       {order.inventoryShortfall && (
         <Alert type="warning" title="Stock shortfall">
           One or more items ran out of stock between checkout and payment. Contact the customer about a substitution or refund.
@@ -224,6 +303,9 @@ export function AdminOrderDetail() {
             <p className="muted">Available once payment completes.</p>
           )}
         </div>
+        {refundable > 0 && (
+          <RefundPanel order={order} refundable={refundable} onDone={(o) => setData({ order: { ...order, ...o } })} />
+        )}
         <div className="order-block">
           <h3>Confirmation email</h3>
           <p>{order.confirmationEmailSentAt ? `Sent ${formatDate(order.confirmationEmailSentAt, true)}` : 'Not sent'}</p>

@@ -24,6 +24,11 @@ export function client(base) {
     return { status: res.status, data };
   };
   return {
+    /** Raw GET (e.g. CSV downloads): returns status, content-type, disposition and body text. */
+    raw: async (p) => {
+      const res = await fetch(base + p, { headers: cookie ? { cookie } : {} });
+      return { status: res.status, type: res.headers.get('content-type') || '', disposition: res.headers.get('content-disposition') || '', body: await res.text() };
+    },
     get: (p) => request('GET', p),
     post: (p, b, h) => request('POST', p, b ?? {}, h),
     put: (p, b) => request('PUT', p, b),

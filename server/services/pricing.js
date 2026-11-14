@@ -1,7 +1,8 @@
 // Server-side source of truth for prices, stock checks and order totals.
 // The client only ever sends product IDs, portion IDs and quantities.
 import { prisma } from '../utils/prisma.js';
-import { env } from '../config/env.js';
+import { envDefaults } from './settings.js';
+import { expireSpecials } from './specials.js';
 import { availabilityOf } from '../utils/serializers.js';
 import { MAX_QTY_PER_LINE } from '../utils/constants.js';
 
@@ -13,6 +14,7 @@ import { MAX_QTY_PER_LINE } from '../utils/constants.js';
  *   issues — human-readable problems keyed to the original line
  */
 export async function resolveCart(items) {
+  await expireSpecials(); // never charge a sale price after its special has ended
   const ids = [...new Set(items.map((i) => Number(i.productId)).filter(Number.isInteger))];
   const products = await prisma.product.findMany({
     where: { id: { in: ids } },
@@ -98,13 +100,13 @@ export async function resolveCart(items) {
   return { lines, issues };
 }
 
-export function computeTotals(lines, fulfillmentMethod) {
+export function computeTotals(lines, fulfillmentMethod, settings = envDefaults()) {
   const subtotal = lines.reduce((sum, l) => sum + l.lineTotal, 0);
-  const tax = Math.round(subtotal * env.store.taxRate);
-  const { feeCents, freeThresholdCents } = env.store.delivery;
+  const tax = Math.round(subtotal * settings.taxRate);
+  const { feeCents, freeThresholdCents } = settings.delivery;
   let deliveryFee = 0;
   if (fulfillmentMethod === 'DELIVERY' && subtotal > 0) {
     deliveryFee = freeThresholdCents > 0 && subtotal >= freeThresholdCents ? 0 : feeCents;
   }
-  return { subtotal, tax, deliveryFee, total: subtotal + tax + deliveryFee, taxRate: env.store.taxRate, currency: env.store.currency };
+  return { subtotal, tax, deliveryFee, total: subtotal + tax + deliveryFee, taxRate: settings.taxRate, currency: settings.currency };
 }
