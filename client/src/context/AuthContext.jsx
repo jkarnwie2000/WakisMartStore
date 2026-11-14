@@ -27,6 +27,13 @@ export function AuthProvider({ children }) {
     return r.user;
   }, []);
 
+  /** Staff sign-up with an admin invite code (creates or upgrades an ADMIN account). */
+  const registerAdmin = useCallback(async (data) => {
+    const r = await api.registerAdmin(data);
+    setUser(r.user);
+    return r;
+  }, []);
+
   const logout = useCallback(async () => {
     await api.logout().catch(() => {});
     setUser(null);
@@ -39,8 +46,8 @@ export function AuthProvider({ children }) {
   }, []);
 
   const value = useMemo(
-    () => ({ user, loading, isAdmin: user?.role === 'ADMIN', login, register, logout, updateProfile }),
-    [user, loading, login, register, logout, updateProfile],
+    () => ({ user, loading, isAdmin: user?.role === 'ADMIN', login, register, registerAdmin, logout, updateProfile }),
+    [user, loading, login, register, registerAdmin, logout, updateProfile],
   );
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

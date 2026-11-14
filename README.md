@@ -50,7 +50,7 @@ Everything is written in JavaScript (no TypeScript): React + Vite on the front e
 
 **Accounts & admin**
 - Registration, login and logout, profile and saved address, password change, **forgot / reset password** (emailed single-use link, 1-hour expiry; resetting signs out other sessions), and order history with detail pages. Passwords are hashed with bcrypt, and sessions use a JWT in an httpOnly, SameSite cookie. Guest checkout is supported.
-- **Admin sign-in page** at `/admin/login` (linked from the footer) with forgot-password and create-account links. New accounts are always customers; existing admins grant or remove admin access on the **Users** page, and the last admin can never be demoted.
+- **Separate sign-in and sign-up for staff and customers.** Customers use `/login` and `/register` (always customer accounts). Staff use the footer **Admin Link** → `/admin/login`, and new staff create their account at `/admin/register` with a **one-time admin invite** (link or code) created on **Admin → Users**: invites can be locked to an email, expire (1–30 days), work once, can be revoked, and are emailed when email is set up. An existing customer account can be upgraded with its current password. Admins can also promote or demote accounts directly; nobody can change their own role, so an admin always remains.
 - **Admin dashboard** (role-based; every `/api/admin/*` route is protected on the server), reached from the footer **Admin Link**:
   - **Dashboard:** a "Today" strip (revenue, orders to pack, ready / out for delivery, out-of-stock, specials running) plus all-time KPIs, orders by status, top sellers, low stock and recent orders
   - **Sales reports:** revenue per day / week / month (7 days to 12 months), sales by department, best sellers and slow movers, pickup vs delivery split, tax and delivery-fee totals, with CSV export of sales and orders
@@ -68,7 +68,7 @@ Everything is written in JavaScript (no TypeScript): React + Vite on the front e
 - Responsive from 360 px phones to wide desktops: mobile drawer navigation, slide-in filter panel, and stacked cart and checkout layouts.
 - Accessibility: semantic HTML and landmarks, skip link, labelled form controls with `aria-invalid` / `aria-describedby`, a keyboard-navigable search combobox, visible focus rings, AA-contrast colour tokens, `prefers-reduced-motion` support, and descriptive alt text.
 - Lazy-loaded images, a code-split admin bundle, Helmet security headers with a CSP, rate-limited auth and checkout endpoints, and Zod validation on every input.
-- 48 automated API tests and a clean ESLint run on client and server.
+- 52 automated API tests and a clean ESLint run on client and server.
 
 ## Technology stack
 
@@ -260,7 +260,7 @@ In development, Vite proxies `/api` and `/uploads` to Express, so the browser ta
 ## Automated tests & linting
 
 ```bash
-npm test      # 48 API tests (node:test)
+npm test      # 52 API tests (node:test)
 npm run lint  # ESLint for client and server
 ```
 
@@ -323,6 +323,7 @@ No code changes are needed to switch from test to live; it is configuration only
 | `GET /api/orders/confirmation/:sessionId` | – | Order for the confirmation page |
 | `POST /api/auth/register · login · logout`, `GET /api/auth/me`, `PUT /api/auth/profile · password` | customer | Accounts |
 | `POST /api/auth/forgot-password`, `POST /api/auth/reset-password` | – | Password reset by emailed link |
+| `GET /api/auth/admin-invite`, `POST /api/auth/register-admin` | invite code | Staff sign-up with a one-time admin invite |
 | `GET /api/orders/mine`, `GET /api/orders/mine/:orderNumber` | customer | Order history |
 | `POST /api/newsletter`, `POST /api/contact` | – | Newsletter sign-up, contact form |
 | `/api/admin/*` | **admin** | Stats & overview, sales reports, CSV exports, fulfilment board & pick list, refunds, store settings, inventory (summary, bulk, CSV import), customers, specials, activity log, products CRUD + PATCH, uploads, categories, orders + status, users + roles, messages |

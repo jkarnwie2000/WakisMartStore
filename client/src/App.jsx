@@ -11,7 +11,7 @@ import CheckoutPage from './pages/CheckoutPage.jsx';
 import OrderConfirmationPage from './pages/OrderConfirmationPage.jsx';
 import AccountPage, { AccountOrderPage } from './pages/AccountPage.jsx';
 import { LoginPage, RegisterPage } from './pages/AuthPages.jsx';
-import { AdminLoginPage, ForgotPasswordPage, ResetPasswordPage } from './pages/AdminAuthPages.jsx';
+import { AdminLoginPage, AdminRegisterPage, ForgotPasswordPage, ResetPasswordPage } from './pages/AdminAuthPages.jsx';
 import { AboutPage, ContactPage, NotFoundPage } from './pages/InfoPages.jsx';
 import { DEPARTMENTS } from './utils/departments.js';
 
@@ -58,6 +58,7 @@ export default function App() {
         <Route path="forgot-password" element={<ForgotPasswordPage />} />
         <Route path="reset-password" element={<ResetPasswordPage />} />
         <Route path="admin/login" element={<AdminLoginPage />} />
+        <Route path="admin/register" element={<AdminRegisterPage />} />
         <Route path="account" element={<RequireAuth><AccountPage /></RequireAuth>} />
         <Route path="account/profile" element={<RequireAuth><AccountPage /></RequireAuth>} />
         <Route path="account/orders/:orderNumber" element={<RequireAuth><AccountOrderPage /></RequireAuth>} />

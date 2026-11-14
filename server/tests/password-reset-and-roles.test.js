@@ -134,9 +134,10 @@ test('the last administrator can never be demoted', async () => {
   await admin.patch(`/api/admin/users/${helperUser.id}/role`, { role: 'ADMIN' });
   const adminUser = await prisma.user.findUnique({ where: { email: 'admin@test.local' } });
   assert.equal((await helper.patch(`/api/admin/users/${adminUser.id}/role`, { role: 'CUSTOMER' })).status, 200);
-  // helper is now the only admin; nobody else can demote them, and they can't demote themselves
+  // An admin can never remove their own access, so at least one admin always remains.
   assert.equal((await helper.patch(`/api/admin/users/${helperUser.id}/role`, { role: 'CUSTOMER' })).status, 400);
-  assert.equal(await prisma.user.count({ where: { role: 'ADMIN' } }), 1);
+  assert.equal((await prisma.user.findUnique({ where: { id: helperUser.id } })).role, 'ADMIN');
+  assert.ok((await prisma.user.count({ where: { role: 'ADMIN' } })) >= 1);
   // restore for other tests
   await prisma.user.update({ where: { id: adminUser.id }, data: { role: 'ADMIN' } });
 });

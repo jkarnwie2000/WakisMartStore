@@ -127,6 +127,9 @@ export function RegisterPage() {
       footer={
         <>
           Already have an account? <Link to={`/login${params.get('next') ? `?next=${encodeURIComponent(next)}` : ''}`}>Sign in</Link>
+          <span className="auth-card__note">
+            Wakis Mart staff? <Link to="/admin/register">Create an admin account</Link> with your invite code.
+          </span>
         </>
       }
     >

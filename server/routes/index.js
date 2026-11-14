@@ -10,6 +10,7 @@ import * as auth from '../controllers/authController.js';
 import * as store from '../controllers/storeController.js';
 import * as admin from '../controllers/adminController.js';
 import * as suite from '../controllers/adminSuiteController.js';
+import * as invites from '../controllers/adminInviteController.js';
 
 const limiter = (max, windowMinutes = 15) =>
   rateLimit({
@@ -48,6 +49,8 @@ api.put('/auth/profile', requireAuth, auth.updateProfile);
 api.put('/auth/password', requireAuth, limiter(10), auth.changePassword);
 api.post('/auth/forgot-password', limiter(5), auth.forgotPassword);
 api.post('/auth/reset-password', limiter(10), auth.resetPassword);
+api.get('/auth/admin-invite', limiter(30), invites.checkInvite);
+api.post('/auth/register-admin', limiter(10), invites.registerAdmin);
 api.get('/orders/mine', requireAuth, orders.myOrders);
 api.get('/orders/mine/:orderNumber', requireAuth, orders.myOrder);
 
@@ -76,6 +79,9 @@ adminRouter.patch('/orders/:id/status', admin.updateOrderStatus);
 adminRouter.post('/orders/:id/resend-confirmation', admin.resendConfirmation);
 adminRouter.get('/users', admin.listUsers);
 adminRouter.patch('/users/:id/role', admin.updateUserRole);
+adminRouter.get('/invites', invites.listInvites);
+adminRouter.post('/invites', invites.createInvite);
+adminRouter.post('/invites/:id/revoke', invites.revokeInvite);
 adminRouter.get('/messages', admin.listMessages);
 adminRouter.get('/overview', suite.overview);
 adminRouter.get('/reports/sales', suite.salesReport);

@@ -111,7 +111,7 @@ export async function sendOrderConfirmation(order, { idempotencyKey = `order-con
 }
 
 /** Shared Resend delivery. Never throws. */
-async function deliver({ to, subject, html, text, idempotencyKey, label }) {
+export async function deliver({ to, subject, html, text, idempotencyKey, label }) {
   if (!emailConfigured()) return { sent: false, error: 'RESEND_API_KEY not set' };
   try {
     const res = await fetch(RESEND_URL, {

@@ -4180,3 +4180,72 @@ fieldset.panel {
     display: flex;
   }
 }
+
+/* Admin invites */
+.invite-form {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr 150px auto;
+  gap: 12px;
+  align-items: end;
+}
+.invite-form .field {
+  margin: 0;
+}
+.invite-created {
+  margin-top: 16px;
+  padding: 16px;
+  border: 1.5px solid var(--brand-600);
+  border-radius: var(--radius);
+  background: var(--brand-100);
+  display: grid;
+  gap: 10px;
+}
+.invite-created p {
+  margin: 0;
+}
+.copy-field {
+  display: grid;
+  grid-template-columns: 100px 1fr auto;
+  gap: 10px;
+  align-items: center;
+}
+.copy-field__label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--ink-700);
+}
+.copy-field__value {
+  background: var(--white);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+  font-size: 0.85rem;
+  overflow-wrap: anywhere;
+}
+.invite-list {
+  margin-top: 16px;
+}
+.invite-list summary {
+  cursor: pointer;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+.invite-code-field .field__control {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.field__control[readonly] {
+  background: var(--cream-100);
+}
+@media (max-width: 900px) {
+  .invite-form {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+@media (max-width: 640px) {
+  .invite-form,
+  .copy-field {
+    grid-template-columns: 1fr;
+  }
+}

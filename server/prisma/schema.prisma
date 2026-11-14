@@ -199,3 +199,21 @@ model AdminActivity {
   @@index([createdAt])
   @@index([action])
 }
+
+// One-time invitations that let a new staff member create an ADMIN account at /admin/register.
+// Only a SHA-256 hash of the invite code is stored.
+model AdminInvite {
+  id            Int       @id @default(autoincrement())
+  codeHash      String
+  email         String? // optional: invite can only be used with this email address
+  note          String?
+  createdById   Int?
+  createdByName String
+  createdAt     DateTime  @default(now())
+  expiresAt     DateTime
+  usedAt        DateTime?
+  usedByEmail   String?
+  revokedAt     DateTime?
+
+  @@index([codeHash])
+}

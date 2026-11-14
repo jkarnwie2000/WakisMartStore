@@ -19,6 +19,7 @@ Wakis Mart Deli & Grocery e-commerce app. JavaScript only (no TypeScript). See R
 - The webhook route is mounted with `express.raw` **before** `express.json` in `app.js`.
 - Deli items have `PortionOption`s; product.price = cheapest portion. Stock is shared across portions.
 - Every `/api/admin/*` route goes through `requireAdmin`; client guards are UX only.
+- Customer sign-up (`/api/auth/register`) must never grant ADMIN. Staff become admins only via a one-time invite (`controllers/adminInviteController.js`, hashed codes, claimed atomically) or promotion by an existing admin.
 - Store settings: read them with `getStoreSettings()` (services/settings.js) — dashboard values override `.env`. Never read `env.store` directly for tax, delivery, pickup or store details. Pass settings into `computeTotals(lines, method, settings)`.
 - Specials: call `expireSpecials()` before reading catalogue prices or pricing a cart, so an ended special is never charged.
 - Admin actions that change data should call `logActivity(req, ACTION, summary, { entityType, entityId })` (services/activity.js). It never throws.
