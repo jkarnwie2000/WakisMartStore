@@ -4348,3 +4348,19 @@ fieldset.panel {
     flex: 1 1 100%;
   }
 }
+
+/* In-place "Added" feedback (replaces the add-to-cart pop-up) */
+.card__add.is-added,
+.deli-item__actions .btn.is-added {
+  background: var(--success);
+  border-color: var(--success);
+  color: #fff;
+}
+.cart-count--pop {
+  animation: cart-pop 0.45s var(--ease);
+}
+@keyframes cart-pop {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.45); }
+  100% { transform: scale(1); }
+}

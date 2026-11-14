@@ -3,9 +3,11 @@ import { Link } from 'react-router-dom';
 import Icon from './Icon.jsx';
 import { Price, ProductBadges, AvailabilityBadge } from './ProductBits.jsx';
 import { useAddToCart } from '../hooks/useAddToCart.js';
+import { useFlash } from '../hooks/useFlash.js';
 
 export default function ProductCard({ product }) {
   const addToCart = useAddToCart();
+  const [added, flashAdded] = useFlash();
   const hasPortions = product.portions?.length > 0;
   const [portionId, setPortionId] = useState(hasPortions ? product.portions[0].id : null);
   const portion = hasPortions ? product.portions.find((p) => p.id === portionId) : null;
@@ -45,14 +47,19 @@ export default function ProductCard({ product }) {
           </div>
           <button
             type="button"
-            className="btn btn--primary btn--icon card__add"
-            onClick={() => addToCart(product, { portion })}
+            className={`btn btn--primary btn--icon card__add ${added ? 'is-added' : ''}`}
+            onClick={() => {
+              if (addToCart(product, { portion })) flashAdded();
+            }}
             disabled={soldOut}
-            aria-label={soldOut ? `${product.name} is sold out` : `Add ${product.name}${portion ? `, ${portion.label},` : ''} to cart`}
+            aria-label={soldOut ? `${product.name} is sold out` : added ? `${product.name} added to cart` : `Add ${product.name}${portion ? `, ${portion.label},` : ''} to cart`}
           >
-            <Icon name={soldOut ? 'close' : 'plus'} size={18} />
-            <span className="card__add-label">{soldOut ? 'Sold out' : 'Add'}</span>
+            <Icon name={soldOut ? 'close' : added ? 'check' : 'plus'} size={18} />
+            <span className="card__add-label">{soldOut ? 'Sold out' : added ? 'Added' : 'Add'}</span>
           </button>
+          <span className="visually-hidden" role="status">
+            {added ? `${product.name} added to your cart` : ''}
+          </span>
         </div>
       </div>
     </article>

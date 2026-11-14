@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { api } from '../services/api.js';
 import { useAsync } from '../hooks/useAsync.js';
@@ -27,6 +27,19 @@ export default function ProductPage() {
   const [portionId, setPortionId] = useState(null);
   const [qty, setQty] = useState(1);
   const [justAdded, setJustAdded] = useState(null); // { label, quantity } after a successful add
+  const addedRef = useRef(null);
+
+  // After adding, bring the Continue shopping / View cart / Checkout box into view if it isn't fully visible.
+  useEffect(() => {
+    if (!justAdded || !addedRef.current) return;
+    const r = addedRef.current.getBoundingClientRect();
+    const header = document.querySelector('.site-header')?.getBoundingClientRect().bottom ?? 0;
+    const fullyVisible = r.top >= header + 8 && r.bottom <= window.innerHeight - 8;
+    if (!fullyVisible) {
+      const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+      addedRef.current.scrollIntoView({ behavior: reduceMotion ? 'auto' : 'smooth', block: 'center' });
+    }
+  }, [justAdded]);
 
   useEffect(() => {
     setPortionId(product?.portions?.[0]?.id ?? null);
@@ -100,7 +113,7 @@ export default function ProductPage() {
             </button>
           </div>
           {justAdded ? (
-            <div className="added-panel" role="status">
+            <div className="added-panel" role="status" ref={addedRef} key={`${justAdded.label}-${inCart}`}>
               <p className="added-panel__msg">
                 <Icon name="check" size={18} strokeWidth={2.4} /> Added {justAdded.quantity > 1 ? `${justAdded.quantity} × ` : ''}
                 {justAdded.label} to your cart

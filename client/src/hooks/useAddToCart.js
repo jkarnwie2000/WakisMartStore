@@ -23,10 +23,9 @@ export function useAddToCart() {
         notify(`You already have all ${product.inventory} available ${label} in your cart.`, { type: 'error' });
         return false;
       }
-      notify(result.limited ? `Added ${result.added} — that's all we have of ${label}.` : `Added ${label} to your cart.`, {
-        link: '/cart',
-        linkLabel: 'View cart',
-      });
+      // Successful adds are confirmed in place (the button / product-page panel and the cart badge),
+      // so no pop-up. The only notice kept is when we couldn't add as many as requested.
+      if (result.limited) notify(`Added ${result.added} — that's all we have of ${label} right now.`, { type: 'info' });
       return true;
     },
     [addItem, notify],

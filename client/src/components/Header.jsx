@@ -74,7 +74,8 @@ export default function Header() {
           </Link>
           <Link to="/cart" className="header-action header-cart" aria-label={`Shopping cart, ${count} ${count === 1 ? 'item' : 'items'}`}>
             <Icon name="cart" size={24} />
-            <span className="cart-count" aria-hidden="true" data-empty={count === 0 || undefined}>
+            {/* key={count} remounts the badge so it gives a quick "pop" whenever the count changes */}
+            <span key={count} className={`cart-count ${count > 0 ? 'cart-count--pop' : ''}`} aria-hidden="true" data-empty={count === 0 || undefined}>
               {count > 99 ? '99+' : count}
             </span>
             <span className="header-cart-label">Cart</span>

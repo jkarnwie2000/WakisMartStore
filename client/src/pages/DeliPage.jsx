@@ -4,6 +4,7 @@ import { api } from '../services/api.js';
 import { useAsync } from '../hooks/useAsync.js';
 import { useDocumentTitle } from '../hooks/useDocumentTitle.js';
 import { useAddToCart } from '../hooks/useAddToCart.js';
+import { useFlash } from '../hooks/useFlash.js';
 import { Breadcrumbs } from '../components/Section.jsx';
 import { ErrorState, Spinner } from '../components/Feedback.jsx';
 import { PortionPicker, QuantityStepper, AvailabilityBadge, OriginTag } from '../components/ProductBits.jsx';
@@ -20,6 +21,7 @@ const TABS = [
 
 function DeliMenuItem({ item, featured = false }) {
   const addToCart = useAddToCart();
+  const [added, flashAdded] = useFlash();
   const { quantityInCart } = useCart();
   const [portionId, setPortionId] = useState(item.portions?.[0]?.id ?? null);
   const [qty, setQty] = useState(1);
@@ -47,9 +49,19 @@ function DeliMenuItem({ item, featured = false }) {
         <PortionPicker portions={item.portions} value={portionId} onChange={setPortionId} name={`portion-${item.id}`} compact />
         <div className="deli-item__actions">
           <QuantityStepper value={Math.min(qty, maxQty)} onChange={setQty} max={maxQty} size="sm" label={`Quantity of ${item.name}`} />
-          <button type="button" className="btn btn--accent" disabled={soldOut} onClick={() => addToCart(item, { portion, quantity: Math.min(qty, maxQty) })}>
-            {soldOut ? 'Sold out today' : 'Add to cart'}
+          <button
+            type="button"
+            className={`btn btn--accent ${added ? 'is-added' : ''}`}
+            disabled={soldOut}
+            onClick={() => {
+              if (addToCart(item, { portion, quantity: Math.min(qty, maxQty) })) flashAdded();
+            }}
+          >
+            {soldOut ? 'Sold out today' : added ? '✓ Added to cart' : 'Add to cart'}
           </button>
+          <span className="visually-hidden" role="status">
+            {added ? `${item.name} added to your cart` : ''}
+          </span>
         </div>
       </div>
     </article>
