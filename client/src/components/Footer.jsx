@@ -51,7 +51,7 @@ export default function Footer() {
             </li>
             <li>
               <Link to="/admin/login" className="footer-admin-link">
-                <Icon name="lock" size={14} /> Admin
+                <Icon name="lock" size={14} /> Admin Link
               </Link>
             </li>
           </ul>
