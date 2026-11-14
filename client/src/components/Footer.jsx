@@ -4,6 +4,13 @@ import Icon from './Icon.jsx';
 import { DEPARTMENTS } from '../utils/departments.js';
 import { useStoreConfig } from '../context/StoreContext.jsx';
 
+function scrollToTop() {
+  const reduceMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+  window.scrollTo({ top: 0, behavior: reduceMotion ? 'auto' : 'smooth' });
+  // Move keyboard focus to the top too, so the next Tab starts from the header.
+  document.querySelector('.site-header .logo')?.focus({ preventScroll: true });
+}
+
 export default function Footer() {
   const { store } = useStoreConfig();
   const year = new Date().getFullYear();
@@ -91,6 +98,9 @@ export default function Footer() {
       </div>
       <div className="container footer-bottom">
         <p>© {year} Wakis Mart. All rights reserved.</p>
+        <button type="button" className="back-to-top" onClick={scrollToTop} aria-label="Back to top" title="Back to top">
+          <Icon name="arrowUp" size={20} strokeWidth={2.2} />
+        </button>
         <p className="footer-secure">
           <Icon name="lock" size={14} /> Secure checkout powered by Stripe
         </p>
