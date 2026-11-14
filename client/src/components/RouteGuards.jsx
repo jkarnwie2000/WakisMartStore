@@ -15,7 +15,7 @@ export function RequireAdmin({ children }) {
   const { user, loading, isAdmin } = useAuth();
   const location = useLocation();
   if (loading) return <Spinner />;
-  if (!user) return <Navigate to={`/login?next=${encodeURIComponent(location.pathname)}`} replace />;
+  if (!user) return <Navigate to={`/admin/login?next=${encodeURIComponent(location.pathname)}`} replace />;
   if (!isAdmin) {
     return (
       <div className="container page">

@@ -3,7 +3,7 @@ import { prisma } from '../utils/prisma.js';
 import { serializeProduct, serializeOrder } from '../utils/serializers.js';
 import { slugify } from '../utils/slugify.js';
 import { badRequest, notFound, conflict } from '../utils/httpError.js';
-import { ORDER_STATUSES, ORIGINS, LOW_STOCK_THRESHOLD } from '../utils/constants.js';
+import { ORDER_STATUSES, ORIGINS, LOW_STOCK_THRESHOLD, ROLES } from '../utils/constants.js';
 import { listProducts } from './productController.js';
 import { storeImage } from '../middleware/upload.js';
 import { emailConfigured, sendOrderConfirmation } from '../services/email.js';
@@ -287,6 +287,34 @@ export async function resendConfirmation(req, res) {
   if (!result.sent) throw badRequest(`The email could not be sent: ${result.error}`);
   const updated = await prisma.order.update({ where: { id }, data: { confirmationEmailSentAt: new Date() }, include: { items: true } });
   res.json({ order: serializeOrder(updated, { admin: true }), message: `Confirmation emailed to ${order.customerEmail}.` });
+}
+
+// ── Users & admin access ───────────────────────────────────
+export async function listUsers(req, res) {
+  const q = z.object({ search: z.string().trim().max(100).optional(), role: z.enum(ROLES).optional() }).parse(req.query);
+  const users = await prisma.user.findMany({
+    where: {
+      ...(q.role && { role: q.role }),
+      ...(q.search && { OR: [{ name: { contains: q.search, mode: 'insensitive' } }, { email: { contains: q.search, mode: 'insensitive' } }] }),
+    },
+    orderBy: [{ role: 'asc' }, { createdAt: 'desc' }],
+    take: 200,
+    select: { id: true, name: true, email: true, role: true, createdAt: true, _count: { select: { orders: true } } },
+  });
+  res.json({ users: users.map((u) => ({ id: u.id, name: u.name, email: u.email, role: u.role, createdAt: u.createdAt, orderCount: u._count.orders })) });
+}
+
+export async function updateUserRole(req, res) {
+  const id = idParam(req);
+  const { role } = z.object({ role: z.enum(ROLES) }).parse(req.body);
+  if (id === req.user.id) throw badRequest('You can’t change your own role. Ask another administrator.');
+  const target = await prisma.user.findUnique({ where: { id } });
+  if (!target) throw notFound('User not found.');
+  if (target.role === 'ADMIN' && role !== 'ADMIN' && (await prisma.user.count({ where: { role: 'ADMIN' } })) <= 1) {
+    throw badRequest('There must always be at least one administrator.');
+  }
+  const user = await prisma.user.update({ where: { id }, data: { role }, select: { id: true, name: true, email: true, role: true, createdAt: true } });
+  res.json({ user, message: role === 'ADMIN' ? `${user.name} is now an administrator.` : `${user.name} no longer has admin access.` });
 }
 
 export async function listMessages(_req, res) {

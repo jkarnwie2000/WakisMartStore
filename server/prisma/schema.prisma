@@ -21,6 +21,11 @@ model User {
   email        String   @unique
   passwordHash String
   role         String   @default("CUSTOMER") // CUSTOMER | ADMIN
+  // Password reset: only a SHA-256 hash of the emailed token is stored; single use, 1-hour expiry.
+  passwordResetTokenHash String? // 256-bit random token → collisions are not a practical concern
+  passwordResetExpiresAt DateTime?
+  // Sessions issued before this moment are rejected (set on password change / reset).
+  passwordChangedAt      DateTime?
   phone        String?
   addressLine1 String?
   addressLine2 String?
@@ -30,6 +35,8 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
   orders       Order[]
+
+  @@index([passwordResetTokenHash])
 }
 
 model Category {

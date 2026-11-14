@@ -11,6 +11,7 @@ const NAV = [
   { to: '/admin/deli', label: 'Deli availability', icon: 'flame' },
   { to: '/admin/orders', label: 'Orders', icon: 'receipt' },
   { to: '/admin/categories', label: 'Categories', icon: 'tag' },
+  { to: '/admin/users', label: 'Users', icon: 'user' },
   { to: '/admin/messages', label: 'Messages', icon: 'chat' },
 ];
 

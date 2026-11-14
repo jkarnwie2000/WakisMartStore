@@ -2816,6 +2816,28 @@ fieldset.panel {
   margin: 20px 0 0;
   font-size: 0.92rem;
 }
+.auth-form__forgot {
+  margin: -6px 0 16px;
+  text-align: right;
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+.auth-form__actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.auth-card__note {
+  display: block;
+  margin-top: 8px;
+  font-size: 0.8rem;
+  color: var(--ink-500);
+}
+.footer-admin-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
 .auth-form__guest {
   text-align: center;
   font-size: 0.88rem;

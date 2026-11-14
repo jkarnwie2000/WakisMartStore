@@ -28,7 +28,9 @@ export async function attachUser(req, _res, next) {
   try {
     const payload = jwt.verify(token, env.jwtSecret);
     const user = await prisma.user.findUnique({ where: { id: Number(payload.sub) } });
-    if (user) req.user = user;
+    // Reject sessions issued before the last password change/reset (1s grace for clock rounding).
+    const revoked = user?.passwordChangedAt && payload.iat * 1000 < user.passwordChangedAt.getTime() - 1000;
+    if (user && !revoked) req.user = user;
   } catch {
     // invalid / expired token — treat as signed out
   }

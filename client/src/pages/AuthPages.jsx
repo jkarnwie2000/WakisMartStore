@@ -9,7 +9,7 @@ import { LogoMark } from '../components/Logo.jsx';
 // Only allow internal redirects (prevents open-redirects via ?next=https://evil.example).
 const safeNext = (next) => (next && next.startsWith('/') && !next.startsWith('//') ? next : '/account');
 
-function AuthShell({ title, subtitle, children, footer }) {
+export function AuthShell({ title, subtitle, children, footer }) {
   return (
     <div className="page container auth-page">
       <div className="auth-card">
@@ -71,6 +71,9 @@ export function LoginPage() {
         {error && <Alert type="error">{error}</Alert>}
         <FormField label="Email" type="email" autoComplete="email" required value={form.email} error={errors.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
         <FormField label="Password" type="password" autoComplete="current-password" required value={form.password} error={errors.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
+        <p className="auth-form__forgot">
+          <Link to="/forgot-password">Forgot password?</Link>
+        </p>
         <button type="submit" className="btn btn--primary btn--lg btn--block" disabled={submitting}>
           {submitting ? 'Signing in…' : 'Sign in'}
         </button>

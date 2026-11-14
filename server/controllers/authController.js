@@ -4,6 +4,9 @@ import { prisma } from '../utils/prisma.js';
 import { issueAuthCookie, clearAuthCookie } from '../middleware/auth.js';
 import { serializeUser } from '../utils/serializers.js';
 import { HttpError, conflict } from '../utils/httpError.js';
+import crypto from 'node:crypto';
+import { env } from '../config/env.js';
+import { emailConfigured, sendPasswordReset } from '../services/email.js';
 
 const email = z.string().trim().toLowerCase().email('Please enter a valid email address.').max(160);
 const password = z
@@ -80,6 +83,51 @@ export async function changePassword(req, res) {
   const data = passwordSchema.parse(req.body);
   const ok = await bcrypt.compare(data.currentPassword, req.user.passwordHash);
   if (!ok) throw new HttpError(400, 'Your current password is incorrect.');
-  await prisma.user.update({ where: { id: req.user.id }, data: { passwordHash: await bcrypt.hash(data.newPassword, 12) } });
+  const user = await prisma.user.update({
+    where: { id: req.user.id },
+    data: { passwordHash: await bcrypt.hash(data.newPassword, 12), passwordChangedAt: new Date() },
+  });
+  // Other devices are signed out (their sessions predate passwordChangedAt); keep this one signed in.
+  issueAuthCookie(res, user);
   res.json({ ok: true });
+}
+
+// ── Password reset ──────────────────────────────────────────────
+const RESET_TTL_MINUTES = 60;
+const hashToken = (token) => crypto.createHash('sha256').update(token).digest('hex');
+const GENERIC_RESET_MESSAGE = 'If an account exists for that email, we’ve sent a link to reset your password. Check your inbox (and spam folder).';
+
+/** POST /api/auth/forgot-password — always answers the same way, so it can't reveal which emails have accounts. */
+export async function forgotPassword(req, res) {
+  const { email: address } = z.object({ email }).parse(req.body);
+  const user = await prisma.user.findUnique({ where: { email: address } });
+  if (user) {
+    const token = crypto.randomBytes(32).toString('hex');
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { passwordResetTokenHash: hashToken(token), passwordResetExpiresAt: new Date(Date.now() + RESET_TTL_MINUTES * 60 * 1000) },
+    });
+    const resetUrl = `${env.clientUrl}/reset-password?token=${token}`;
+    await sendPasswordReset({ to: user.email, name: user.name, resetUrl, expiresMinutes: RESET_TTL_MINUTES });
+  }
+  res.json({ ok: true, message: GENERIC_RESET_MESSAGE, emailEnabled: emailConfigured() });
+}
+
+/** POST /api/auth/reset-password — sets a new password using a valid, unexpired, single-use token. */
+export async function resetPassword(req, res) {
+  const data = z.object({ token: z.string().regex(/^[a-f0-9]{64}$/, 'This reset link is invalid.'), password }).parse(req.body);
+  const user = await prisma.user.findFirst({ where: { passwordResetTokenHash: hashToken(data.token) } });
+  if (!user || !user.passwordResetExpiresAt || user.passwordResetExpiresAt < new Date()) {
+    throw new HttpError(400, 'This reset link is invalid or has expired. Please request a new one.');
+  }
+  await prisma.user.update({
+    where: { id: user.id },
+    data: {
+      passwordHash: await bcrypt.hash(data.password, 12),
+      passwordResetTokenHash: null,
+      passwordResetExpiresAt: null,
+      passwordChangedAt: new Date(), // signs out every existing session
+    },
+  });
+  res.json({ ok: true, message: 'Your password has been reset. You can now sign in with your new password.' });
 }

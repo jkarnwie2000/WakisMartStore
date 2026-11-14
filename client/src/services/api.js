@@ -61,6 +61,8 @@ export const api = {
   logout: () => request('/auth/logout', { method: 'POST' }),
   updateProfile: (data) => request('/auth/profile', { method: 'PUT', body: data }),
   changePassword: (data) => request('/auth/password', { method: 'PUT', body: data }),
+  forgotPassword: (email) => request('/auth/forgot-password', { method: 'POST', body: { email } }),
+  resetPassword: (token, password) => request('/auth/reset-password', { method: 'POST', body: { token, password } }),
   myOrders: () => request('/orders/mine'),
   myOrder: (orderNumber) => request(`/orders/mine/${encodeURIComponent(orderNumber)}`),
 
@@ -87,5 +89,7 @@ export const api = {
     resendConfirmation: (id) => request(`/admin/orders/${id}/resend-confirmation`, { method: 'POST' }),
     updateOrderStatus: (id, status) => request(`/admin/orders/${id}/status`, { method: 'PATCH', body: { status } }),
     messages: () => request('/admin/messages'),
+    users: (params, signal) => request(`/admin/users${qs(params)}`, { signal }),
+    updateUserRole: (id, role) => request(`/admin/users/${id}/role`, { method: 'PATCH', body: { role } }),
   },
 };

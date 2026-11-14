@@ -107,3 +107,46 @@ export async function sendOrderConfirmation(order, { idempotencyKey = `order-con
     return { sent: false, error: err.message };
   }
 }
+
+/** Shared Resend delivery. Never throws. */
+async function deliver({ to, subject, html, text, idempotencyKey, label }) {
+  if (!emailConfigured()) return { sent: false, error: 'RESEND_API_KEY not set' };
+  try {
+    const res = await fetch(RESEND_URL, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${process.env.RESEND_API_KEY}`, 'Content-Type': 'application/json', ...(idempotencyKey && { 'Idempotency-Key': idempotencyKey }) },
+      body: JSON.stringify({ from: process.env.EMAIL_FROM || DEFAULT_FROM, to: [to], subject, html, text, ...(env.store.email && { reply_to: env.store.email }) }),
+      signal: AbortSignal.timeout(8000),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      console.warn(`[email] Resend rejected ${label}: ${res.status} ${data?.message || ''}`);
+      return { sent: false, error: data?.message || `HTTP ${res.status}` };
+    }
+    console.log(`[email] ${label} sent (${data.id}).`);
+    return { sent: true, id: data.id };
+  } catch (err) {
+    console.warn(`[email] Could not send ${label}: ${err.message}`);
+    return { sent: false, error: err.message };
+  }
+}
+
+/** Emails a one-time password reset link. Never throws. */
+export async function sendPasswordReset({ to, name, resetUrl, expiresMinutes }) {
+  const firstName = String(name || '').split(' ')[0] || 'there';
+  const html = `<!doctype html><html><body style="margin:0;background:#fffcf6;font-family:Arial,Helvetica,sans-serif;color:#241a12">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#fffcf6;padding:24px 12px"><tr><td align="center">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#ffffff;border:1px solid #eadfc9;border-radius:14px;overflow:hidden">
+    <tr><td style="background:#1e2a5a;padding:22px 28px;color:#fff6e7;font-family:Georgia,serif;font-size:24px;font-weight:bold">Wakis <span style="color:#ecd08a">Mart</span></td></tr>
+    <tr><td style="height:6px;background:#e07a1f"></td></tr>
+    <tr><td style="padding:28px">
+      <h1 style="font-family:Georgia,serif;font-size:22px;margin:0 0 12px">Reset your password</h1>
+      <p style="margin:0 0 18px;color:#4a3b2e">Hi ${esc(firstName)}, we received a request to reset the password for your Wakis Mart account. This link works once and expires in ${expiresMinutes} minutes.</p>
+      <p style="margin:0 0 22px"><a href="${esc(resetUrl)}" style="display:inline-block;background:#c2570f;color:#ffffff;text-decoration:none;font-weight:bold;padding:12px 22px;border-radius:999px">Choose a new password</a></p>
+      <p style="margin:0;font-size:13px;color:#6b5a48">If you didn’t ask for this, you can ignore this email — your password won’t change.</p>
+    </td></tr>
+    <tr><td style="background:#0b1029;color:#eedcb9;padding:16px 28px;font-size:12px">Wakis Mart Deli &amp; Grocery</td></tr>
+  </table></td></tr></table></body></html>`;
+  const text = `Hi ${firstName},\n\nReset your Wakis Mart password using this link (works once, expires in ${expiresMinutes} minutes):\n${resetUrl}\n\nIf you didn't ask for this, ignore this email.`;
+  return deliver({ to, subject: 'Reset your Wakis Mart password', html, text, label: 'password reset email' });
+}

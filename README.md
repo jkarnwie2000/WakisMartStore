@@ -49,7 +49,8 @@ Everything is written in JavaScript (no TypeScript): React + Vite on the front e
 - Inventory is decremented inside a database transaction after payment. If stock ran out between checkout and payment, the order is flagged for staff instead of the inventory going negative.
 
 **Accounts & admin**
-- Registration, login and logout, profile and saved address, password change, and order history with detail pages. Passwords are hashed with bcrypt, and sessions use a JWT in an httpOnly, SameSite cookie. Guest checkout is supported.
+- Registration, login and logout, profile and saved address, password change, **forgot / reset password** (emailed single-use link, 1-hour expiry; resetting signs out other sessions), and order history with detail pages. Passwords are hashed with bcrypt, and sessions use a JWT in an httpOnly, SameSite cookie. Guest checkout is supported.
+- **Admin sign-in page** at `/admin/login` (linked from the footer) with forgot-password and create-account links. New accounts are always customers; existing admins grant or remove admin access on the **Users** page, and the last admin can never be demoted.
 - **Admin dashboard** (role-based; every `/api/admin/*` route is protected on the server):
   - KPIs: revenue, paid orders, average order value, customers, messages
   - Orders-by-status chart, top sellers, low-stock list and recent orders
@@ -63,7 +64,7 @@ Everything is written in JavaScript (no TypeScript): React + Vite on the front e
 - Responsive from 360 px phones to wide desktops: mobile drawer navigation, slide-in filter panel, and stacked cart and checkout layouts.
 - Accessibility: semantic HTML and landmarks, skip link, labelled form controls with `aria-invalid` / `aria-describedby`, a keyboard-navigable search combobox, visible focus rings, AA-contrast colour tokens, `prefers-reduced-motion` support, and descriptive alt text.
 - Lazy-loaded images, a code-split admin bundle, Helmet security headers with a CSP, rate-limited auth and checkout endpoints, and Zod validation on every input.
-- 31 automated API tests and a clean ESLint run on client and server.
+- 38 automated API tests and a clean ESLint run on client and server.
 
 ## Technology stack
 
@@ -255,7 +256,7 @@ In development, Vite proxies `/api` and `/uploads` to Express, so the browser ta
 ## Automated tests & linting
 
 ```bash
-npm test      # 31 API tests (node:test)
+npm test      # 38 API tests (node:test)
 npm run lint  # ESLint for client and server
 ```
 
@@ -266,6 +267,7 @@ The test runner creates a **uniquely named temporary Postgres schema** (e.g. `wm
 - Checkout validation, and the 503 response when Stripe is not configured
 - Webhook signature rejection, **verified payment → order paid + inventory decremented once**, duplicate and replayed events, delayed payment methods, expired sessions, and stock-shortfall flagging
 - Confirmation emails: sent exactly once per paid order, never block payment if Resend fails, HTML-escaped, admin resend
+- Password reset (single-use hashed tokens, expiry, no account enumeration, session revocation) and admin role management (self-change and last-admin guards)
 - Registration and password hashing, login and logout, profile, per-customer order isolation, admin authorization (401/403), product CRUD, deli availability, the order-status workflow, newsletter and contact
 
 Webhook tests use Stripe's own `generateTestHeaderString` to sign events locally, so they need no network or Stripe account. Creating a real Checkout Session needs your Stripe test key; verify that step manually as described [above](#testing-stripe-payments).
@@ -315,9 +317,10 @@ No code changes are needed to switch from test to live; it is configuration only
 | `POST /api/webhooks/stripe` | Stripe signature | Payment events (raw body) |
 | `GET /api/orders/confirmation/:sessionId` | – | Order for the confirmation page |
 | `POST /api/auth/register · login · logout`, `GET /api/auth/me`, `PUT /api/auth/profile · password` | customer | Accounts |
+| `POST /api/auth/forgot-password`, `POST /api/auth/reset-password` | – | Password reset by emailed link |
 | `GET /api/orders/mine`, `GET /api/orders/mine/:orderNumber` | customer | Order history |
 | `POST /api/newsletter`, `POST /api/contact` | – | Newsletter sign-up, contact form |
-| `/api/admin/*` | **admin** | Stats, products CRUD + PATCH, uploads, categories, orders + status, messages |
+| `/api/admin/*` | **admin** | Stats, products CRUD + PATCH, uploads, categories, orders + status, users + roles, messages |
 
 ## Known limitations
 

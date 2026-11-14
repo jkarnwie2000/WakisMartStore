@@ -45,6 +45,8 @@ api.post('/auth/logout', auth.logout);
 api.get('/auth/me', auth.me);
 api.put('/auth/profile', requireAuth, auth.updateProfile);
 api.put('/auth/password', requireAuth, limiter(10), auth.changePassword);
+api.post('/auth/forgot-password', limiter(5), auth.forgotPassword);
+api.post('/auth/reset-password', limiter(10), auth.resetPassword);
 api.get('/orders/mine', requireAuth, orders.myOrders);
 api.get('/orders/mine/:orderNumber', requireAuth, orders.myOrder);
 
@@ -71,5 +73,7 @@ adminRouter.get('/orders', admin.listOrders);
 adminRouter.get('/orders/:id', admin.getOrder);
 adminRouter.patch('/orders/:id/status', admin.updateOrderStatus);
 adminRouter.post('/orders/:id/resend-confirmation', admin.resendConfirmation);
+adminRouter.get('/users', admin.listUsers);
+adminRouter.patch('/users/:id/role', admin.updateUserRole);
 adminRouter.get('/messages', admin.listMessages);
 api.use('/admin', adminRouter);

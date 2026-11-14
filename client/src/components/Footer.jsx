@@ -49,6 +49,11 @@ export default function Footer() {
             <li>
               <Link to="/contact">Contact us</Link>
             </li>
+            <li>
+              <Link to="/admin/login" className="footer-admin-link">
+                <Icon name="lock" size={14} /> Admin
+              </Link>
+            </li>
           </ul>
         </nav>
         <div>
