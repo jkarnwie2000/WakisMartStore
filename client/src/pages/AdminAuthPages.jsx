@@ -57,7 +57,10 @@ export function AdminLoginPage() {
       footer={
         <>
           New staff member? <Link to="/admin/register">Create an admin account</Link>
-          <span className="auth-card__note">You’ll need an invite code or link from an existing administrator. Shopping with us? Use the <Link to="/login">customer sign-in</Link>.</span>
+          <span className="auth-card__note">You’ll need an invite code or link from an existing administrator.</span>
+          <span className="auth-card__alt">
+            Shopping with us? <Link to="/register">Create a customer account</Link> or <Link to="/login">sign in as a customer</Link>
+          </span>
         </>
       }
     >

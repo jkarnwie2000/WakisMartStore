@@ -4249,3 +4249,11 @@ fieldset.panel {
     grid-template-columns: 1fr;
   }
 }
+
+.auth-card__alt {
+  display: block;
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+  font-size: 0.9rem;
+}
